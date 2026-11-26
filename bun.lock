@@ -5,9 +5,9 @@
     "": {
       "name": "timetree-ics-feed",
       "devDependencies": {
-        "@types/bun": "^1.4.5",
-        "lefthook": "^2.2.4",
-        "typescript": "^7.0.2",
+        "@types/bun": "1.4.5",
+        "lefthook": "2.2.4",
+        "typescript": "7.0.2",
       },
     },
   },
