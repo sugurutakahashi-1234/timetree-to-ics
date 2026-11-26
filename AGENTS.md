@@ -37,7 +37,7 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 
 版の乗っ取りへの備え。緩めるときは理由を報告に書く。
 
-- 依存はちょうどの版で書き、公開から 3 日たっていない版は入れない（`bunfig.toml`）
+- 依存はちょうどの版で書き、公開から 7 日たっていない版は入れない（`bunfig.toml`。単位は秒）
 - GitHub Actions は commit の SHA で固定する。足したら `mise exec -- pinact run` で固定する
 - 仕組み（`.github/workflows`）は `actionlint`・`pinact run --check`・`zizmor` で点検する。道具の版は `mise.toml` で固定し、lefthook（仕組みを変えた commit）と CI の `workflows` が同じ版で流す
 - 出す仕組み（`release.yml`）では、キャッシュを使わず、lockfile の外から物を入れない（zizmor の cache-poisoning・adhoc-packages）
