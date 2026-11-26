@@ -25,7 +25,7 @@ Converts a TimeTree public calendar into an iCalendar (.ics) file of upcoming ev
 
 ## コマンド
 
-Node 22 以上で動く。
+Node 24 以上で動く。
 
 ```bash
 npx timetree-to-ics https://timetreeapp.com/public_calendars/<名前> -o calendar.ics

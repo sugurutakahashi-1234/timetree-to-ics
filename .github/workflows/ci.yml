@@ -13,16 +13,13 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # 支える Node（package.json の engines）の、いちばん古い物と新しい LTS
-        node: [22, 24]
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node }}
+          # 支える Node は 24 だけ（package.json の engines）
+          node-version: 24
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: npm pack --dry-run

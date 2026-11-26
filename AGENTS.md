@@ -15,7 +15,7 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 
 - **道具は、読むことと .ics にすることだけを持つ。** どこに置くか・いつ作り直すか・止まりをどう見張るかは使う人が決める。README に例として書くのはよいが、置き場（Workers の設定・定期実行の設定）をこのリポジトリに入れない
 - **`src/` は `fetch` と標準の関数だけで書く。** Node・Bun・Deno・Cloudflare Workers のどれでも動くようにする。Node の API（`node:*`）は `src/cli.ts` だけで使う
-- **支える Node は、保守の続いている LTS の古い方から。** 今は 22 以上（`package.json` の `engines` と、CI の版の並び）。古い方の保守が終わったら、両方を上げる
+- **支える Node は 24 以上の 1 つだけ。** いくつもの版を確かめる手間をかけない（持ち主の決め）。`package.json` の `engines` と CI の `node-version` を同じ版にし、次の LTS に移るときは両方を上げる
 - **テストは TimeTree に行かない。** 返事の形は `test/fixtures.ts` の作り物で再現する。実物の確かめは、手元でコマンドを 1 回流す
 - **実在のカレンダーの名前・予定・人の名前をリポジトリに入れない。** 見本は作り物にする。公開リポジトリで、誰がどのカレンダーを見ているかが分かってしまうため
 - **TimeTree に負担をかけない。** 読むのは 1 回の作成で 2〜3 回まで。並べて何度も読む・短い間隔で読み直す機能は足さない。非公式の口なので、負担が目立てば塞がれる
@@ -39,7 +39,7 @@ bun run check                                              # テスト・型の�
 node dist/cli.js <公開カレンダーの名前か URL> -o /tmp/out.ics   # 実物の確かめ（名前は commit しない）
 ```
 
-commit の前に lefthook が、commit の書き方・秘密の混入・テストを見る。push と PR では GitHub Actions の `ci` が、Node 22 と 24 で同じ確かめを流す。
+commit の前に lefthook が、commit の書き方・秘密の混入・テストを見る。push と PR では GitHub Actions の `ci` が、Node 24 で同じ確かめを流す。
 
 ## npm に出す
 
