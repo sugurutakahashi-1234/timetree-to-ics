@@ -12,6 +12,11 @@ pre-commit:
     # 秘密の混入を commit の前に止める。gitleaks が入っていない環境では飛ばす（GitHub の push protection が後ろで守る）
     - name: gitleaks
       run: if command -v gitleaks >/dev/null; then gitleaks git --staged --redact --no-banner; else echo "gitleaks が無いので飛ばした"; fi
+    # 仕組み（.github/workflows）を変えたときだけ、書き間違い・SHA の固定漏れ・守りの穴を見る。
+    # 道具の版は mise.toml。mise が無い環境では飛ばす（CI の workflows が後ろで見る）
+    - name: workflows
+      glob: ".github/workflows/*.yml"
+      run: if command -v mise >/dev/null; then mise exec -- actionlint && mise exec -- pinact run --check && mise exec -- zizmor --offline --no-progress .github/workflows; else echo "mise が無いので飛ばした"; fi
     - name: test
       glob:
         - "src/*.ts"
