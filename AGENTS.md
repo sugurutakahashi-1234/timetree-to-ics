@@ -24,6 +24,8 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 - `GET https://timetreeapp.com/api/v2/public_calendars/<名前>`: カレンダーの名前など
 - `GET .../public_calendars/<名前>/public_events?from=<ミリ秒>&to=<ミリ秒>&utc_offset=<秒>`: 予定。1 回 300 件まで、続きは `paging.next` と `cursor=<paging.next_cursor>`
 - 無い名前は 400。ログインも鍵も要らない
+- 名乗りは `X-Timetreea` と `User-Agent` の 2 つとも付ける。片方が欠けると、Cloudflare Workers からの予定の口は 400（`code: -401`）になる。家の回線からは欠けても返るので、口を直したら Workers の上でも 1 回確かめる
+- `User-Agent` の版は `src/timetree.ts` の `VERSION` に書く。`package.json` の版と一緒に上げる
 - 終日の予定は、始まりと終わりが UTC の 0 時で、終わりは最後の日を含む（.ics の DTEND は 1 日足す）
 - 本文に U+2028 が入ることがある（.ics では改行にする）
 - 口が変わったら `src/timetree.ts` だけを直し、`test/fixtures.ts` の形も合わせる

@@ -43,12 +43,14 @@ export function rawEvent(overrides: Record<string, unknown> = {}) {
 /** URL ごとに返事を決める偽の fetch。呼ばれた URL を残す */
 export function fakeFetch(routes: (url: URL) => { status?: number; body: unknown } | undefined) {
 	const calls: URL[] = [];
-	const fetchLike: FetchLike = async (input) => {
+	const headers: Record<string, string>[] = [];
+	const fetchLike: FetchLike = async (input, init) => {
 		const url = new URL(input);
 		calls.push(url);
+		headers.push(init?.headers ?? {});
 		const route = routes(url);
 		if (!route) return new Response("not found", { status: 404 });
 		return new Response(JSON.stringify(route.body), { status: route.status ?? 200 });
 	};
-	return { fetch: fetchLike, calls };
+	return { fetch: fetchLike, calls, headers };
 }

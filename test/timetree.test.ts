@@ -49,6 +49,13 @@ describe("fetchPublicEvents", () => {
 		expect(calls[0]?.searchParams.get("utc_offset")).toBe("32400");
 	});
 
+	test("名乗りを 2 つとも付ける（片方が欠けると、Cloudflare Workers からは 400 になる）", async () => {
+		const { fetch, headers } = fakeFetch(() => ({ body: { public_events: [], paging: {} } }));
+		await fetchPublicEvents("example_band", { from: new Date(0), to: new Date(1), fetch });
+		expect(headers[0]?.["X-Timetreea"]).toBe("web/2.1.0/ja");
+		expect(headers[0]?.["User-Agent"]).toStartWith("timetree-ics-feed/");
+	});
+
 	test("欄の無い予定も、空の文字列と空の配列にそろえる", async () => {
 		const { fetch } = fakeFetch(() => ({
 			body: { public_events: [rawEvent({ note: undefined, recurrences: null, location_address: null })], paging: {} },

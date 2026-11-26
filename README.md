@@ -25,7 +25,7 @@ Turns a TimeTree public calendar into an iCalendar (.ics) feed of upcoming event
 [Bun](https://bun.sh) で動く。
 
 ```bash
-bunx github:sugurutakahashi-1234/timetree-ics-feed#v0.1.0 \
+bunx github:sugurutakahashi-1234/timetree-ics-feed#v0.1.1 \
   https://timetreeapp.com/public_calendars/<名前> -o calendar.ics
 ```
 
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: oven-sh/setup-bun@v2
-      - run: bunx github:sugurutakahashi-1234/timetree-ics-feed#v0.1.0 <名前> -o public/calendar.ics
+      - run: bunx github:sugurutakahashi-1234/timetree-ics-feed#v0.1.1 <名前> -o public/calendar.ics
       # このあと public/ を GitHub Pages に出す
 ```
 

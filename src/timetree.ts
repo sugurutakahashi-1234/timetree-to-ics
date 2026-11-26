@@ -4,8 +4,15 @@
 
 export const TIMETREE_ORIGIN = "https://timetreeapp.com";
 
-// ウェブ版が付けている名乗り。無くても返るが、ウェブ版と同じ読み方にそろえておく
-const CLIENT_HEADER = { "X-Timetreea": "web/2.1.0/ja", Accept: "application/json" } as const;
+// 名乗りは 2 つとも付ける。Cloudflare Workers の fetch は User-Agent を付けず、
+// X-Timetreea と User-Agent のどちらかが欠けると、予定の口は 400（code -401）を返す（2026-11 に確かめた。
+// 家の回線からは欠けても返るので、手元の確かめだけでは気づけない）
+const VERSION = "0.1.1";
+const CLIENT_HEADER = {
+	"X-Timetreea": "web/2.1.0/ja",
+	"User-Agent": `timetree-ics-feed/${VERSION} (+https://github.com/sugurutakahashi-1234/timetree-ics-feed)`,
+	Accept: "application/json",
+} as const;
 
 // 1 回で 300 件まで返り、続きは cursor で読む。止まらない読み方を防ぐ上限
 const MAX_PAGES = 20;

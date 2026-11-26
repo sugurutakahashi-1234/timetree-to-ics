@@ -1,6 +1,6 @@
 {
 	"name": "timetree-ics-feed",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "TimeTree の公開カレンダーを、今後の予定だけの iCalendar（.ics）にする。Google カレンダーなどで URL から購読できる",
 	"license": "MIT",
 	"author": "Suguru Takahashi",
