@@ -3,13 +3,13 @@
 // 公式の API は 2023-12 に終わっていて、外へ出す公式の方法は無い。API の形が変わったら、ここだけを直す。
 
 /** TimeTree の Web 版の起点 */
-export const TIMETREE_ORIGIN = "https://timetreeapp.com";
+const TIMETREE_ORIGIN = "https://timetreeapp.com";
 
 // ヘッダーは X-Timetreea と User-Agent の 2 つとも付ける。Cloudflare Workers の fetch は User-Agent を付けず、
 // どちらかが欠けると、予定の API は 400（code -401）を返す（2026-11 に確かめた。
 // 家の回線からは欠けても返るので、手元の確かめだけでは気づけない）
 /** このパッケージの版（TimeTree への User-Agent に使う） */
-export const VERSION = "1.2.1";
+export const VERSION = "2.0.0";
 const CLIENT_HEADER = {
 	"X-Timetreea": "web/2.1.0/ja",
 	"User-Agent": `timetree-to-ics/${VERSION} (+https://github.com/sugurutakahashi-1234/timetree-to-ics)`,
@@ -75,16 +75,14 @@ export type TimeTreeErrorKind = "network" | "http" | "format";
 export class TimeTreeError extends Error {
 	/** 読めなかった理由の種類 */
 	readonly kind: TimeTreeErrorKind;
+	/** TimeTree が返した HTTP の番号（`kind` が `http` のときと、返事の形が違ったとき） */
+	readonly status: number | undefined;
 
-	constructor(
-		message: string,
-		/** TimeTree が返した HTTP の番号（`kind` が `http` のとき） */
-		readonly status?: number,
-		options: { kind?: TimeTreeErrorKind; cause?: unknown } = {},
-	) {
+	constructor(message: string, options: { kind: TimeTreeErrorKind; status?: number | undefined; cause?: unknown }) {
 		super(message, options.cause === undefined ? undefined : { cause: options.cause });
 		this.name = "TimeTreeError";
-		this.kind = options.kind ?? (status === undefined ? "format" : "http");
+		this.kind = options.kind;
+		this.status = options.status;
 	}
 }
 
@@ -126,7 +124,7 @@ export async function fetchPublicCalendar(
 	const body = await getJson(options.fetch ?? fetch, `${TIMETREE_ORIGIN}/api/v2/public_calendars/${ref}`, options.signal);
 	const raw = (body as { public_calendar?: RawCalendar }).public_calendar;
 	if (typeof raw?.name !== "string") {
-		throw new TimeTreeError("公開カレンダーの返事に名前がありません（API の形が変わった可能性）", undefined, { kind: "format" });
+		throw new TimeTreeError("公開カレンダーの返事に名前がありません（API の形が変わった可能性）", { kind: "format" });
 	}
 	return {
 		aliasCode: raw.alias_code ?? ref,
@@ -175,7 +173,7 @@ export type FetchEventsOptions = {
  * 範囲の扱いは TimeTree の側が決めるので、厳密に絞りたいときは呼ぶ側でもう一度絞る。
  * @param calendar 公開カレンダーの名前か URL（{@link parseCalendarRef} の形）
  * @throws {TypeError} 名前か URL の形が違うとき
- * @throws {RangeError} from・to が無効な日付のとき、from が to より後のとき
+ * @throws {RangeError} from・to が無効な日付のとき、from が to より後のとき、予定が 6000 件を超えたとき
  * @throws {TimeTreeError} TimeTree を読めなかったとき
  */
 export async function fetchPublicEvents(calendar: string, options: FetchEventsOptions): Promise<PublicEvent[]> {
@@ -200,7 +198,7 @@ export async function fetchPublicEvents(calendar: string, options: FetchEventsOp
 		if (cursor) url.searchParams.set("cursor", cursor);
 		const body = (await getJson(options.fetch ?? fetch, url.toString(), options.signal)) as RawEventsPage;
 		if (!Array.isArray(body.public_events)) {
-			throw new TimeTreeError("予定の返事に public_events がありません（API の形が変わった可能性）", undefined, {
+			throw new TimeTreeError("予定の返事に public_events がありません（API の形が変わった可能性）", {
 				kind: "format",
 			});
 		}
@@ -208,9 +206,8 @@ export async function fetchPublicEvents(calendar: string, options: FetchEventsOp
 		if (!body.paging?.next || !body.paging.next_cursor) return events;
 		cursor = body.paging.next_cursor;
 	}
-	throw new TimeTreeError(`予定が ${MAX_PAGES * 300} 件を超えました。範囲（日数）を狭めてください`, undefined, {
-		kind: "format",
-	});
+	// 呼ぶ側が範囲を狭めれば読めるので、API の変化（format）ではなく範囲の誤りとして返す
+	throw new RangeError(`予定が ${MAX_PAGES * 300} 件を超えました。範囲（日数）を狭めてください`);
 }
 
 function normalizeEvent(raw: RawEvent): PublicEvent {
@@ -225,7 +222,7 @@ function normalizeEvent(raw: RawEvent): PublicEvent {
 		typeof endAt !== "number" ||
 		!Number.isFinite(endAt)
 	) {
-		throw new TimeTreeError("予定に ID か時刻がありません（API の形が変わった可能性）", undefined, { kind: "format" });
+		throw new TimeTreeError("予定に ID か時刻がありません（API の形が変わった可能性）", { kind: "format" });
 	}
 	return {
 		id: String(id),
@@ -252,7 +249,6 @@ async function getJson(doFetch: FetchLike, url: string, signal: AbortSignal | un
 	} catch (error) {
 		throw new TimeTreeError(
 			`TimeTree に接続できません: ${error instanceof Error ? error.message : String(error)}`,
-			undefined,
 			{ kind: "network", cause: error },
 		);
 	}
@@ -263,20 +259,22 @@ async function getJson(doFetch: FetchLike, url: string, signal: AbortSignal | un
 				: response.status === 429
 					? "（読む回数が多すぎます。間を空けてください）"
 					: "";
-		throw new TimeTreeError(`TimeTree が ${response.status} を返しました${hint}`, response.status, { kind: "http" });
+		throw new TimeTreeError(`TimeTree が ${response.status} を返しました${hint}`, { kind: "http", status: response.status });
 	}
 	let body: unknown;
 	try {
 		body = await response.json();
 	} catch (error) {
-		throw new TimeTreeError("TimeTree の返事が JSON ではありません（API の形が変わった可能性）", response.status, {
+		throw new TimeTreeError("TimeTree の返事が JSON ではありません（API の形が変わった可能性）", {
 			kind: "format",
+			status: response.status,
 			cause: error,
 		});
 	}
 	if (typeof body !== "object" || body === null) {
-		throw new TimeTreeError("TimeTree の返事が想定の形ではありません（API の形が変わった可能性）", response.status, {
+		throw new TimeTreeError("TimeTree の返事が想定の形ではありません（API の形が変わった可能性）", {
 			kind: "format",
+			status: response.status,
 		});
 	}
 	return body;
