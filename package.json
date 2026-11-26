@@ -8,7 +8,13 @@
 		"type": "git",
 		"url": "git+https://github.com/sugurutakahashi-1234/timetree-ics-feed.git"
 	},
-	"keywords": ["timetree", "ical", "ics", "icalendar", "google-calendar"],
+	"keywords": [
+		"timetree",
+		"ical",
+		"ics",
+		"icalendar",
+		"google-calendar"
+	],
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts"
@@ -16,7 +22,11 @@
 	"bin": {
 		"timetree-ics-feed": "./src/cli.ts"
 	},
-	"files": ["src", "README.md", "LICENSE"],
+	"files": [
+		"src",
+		"README.md",
+		"LICENSE"
+	],
 	"scripts": {
 		"test": "bun test",
 		"typecheck": "tsc --noEmit",
@@ -24,8 +34,8 @@
 		"prepare": "lefthook install"
 	},
 	"devDependencies": {
-		"@types/bun": "^1.4.4",
-		"lefthook": "^2.2.2",
+		"@types/bun": "^1.4.5",
+		"lefthook": "^2.2.4",
 		"typescript": "^7.0.2"
 	}
 }
