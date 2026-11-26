@@ -1,0 +1,39 @@
+# v0.2.0 の形の札を push したら、npm に出して GitHub の Release を作る。
+# npm へは信頼された出し方（OIDC）で出すので、npm の鍵を GitHub に置かない。来歴（provenance）も自動で付く。
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # GitHub の Release を作る
+  id-token: write # npm の信頼された出し方
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # 信頼された出し方は npm 11.5.1 以上が要る
+      - run: npm install -g npm@latest
+      - run: bun install --frozen-lockfile
+      - name: 札と package.json の版がそろっているか
+        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+      - name: npm に出す（同じ版が出ていれば飛ばす。最初の版は手元から出したため）
+        run: |
+          name=$(node -p 'require("./package.json").name')
+          if npm view "$name@${GITHUB_REF_NAME#v}" version > /dev/null 2>&1; then
+            echo "$name@${GITHUB_REF_NAME#v} は出ているので飛ばす"
+          else
+            npm publish --access public
+          fi
+      - name: GitHub の Release を作る
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes

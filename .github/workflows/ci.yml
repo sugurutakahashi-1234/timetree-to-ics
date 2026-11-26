@@ -1,0 +1,28 @@
+# push と PR のたびに、テスト・型の検査・組み立てと、Node での起動を確かめる。
+# 手元の commit は lefthook が見るので、ここが要るのは手元を通らない PR のため。
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 支える Node（package.json の engines）の、いちばん古い物と新しい LTS
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: npm pack --dry-run

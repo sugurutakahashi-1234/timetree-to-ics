@@ -1,12 +1,12 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // TimeTree の公開カレンダーを、今後の予定だけの .ics にして出すコマンド。
 
 import { writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
-import { buildFeed } from "./feed.ts";
+import { timetreeToIcs } from "./convert.ts";
 import { TimeTreeError } from "./timetree.ts";
 
-const usage = `使い方: timetree-ics-feed <公開カレンダーの名前か URL> [オプション]
+const usage = `使い方: timetree-to-ics <公開カレンダーの名前か URL> [オプション]
 
 TimeTree の公開カレンダーを読み、今後の予定を iCalendar（.ics）にして出す。
 
@@ -17,7 +17,7 @@ TimeTree の公開カレンダーを読み、今後の予定を iCalendar（.ics
   -h, --help                この説明
 
 例:
-  timetree-ics-feed https://timetreeapp.com/public_calendars/<名前> -o calendar.ics`;
+  npx timetree-to-ics https://timetreeapp.com/public_calendars/<名前> -o calendar.ics`;
 
 async function main(): Promise<number> {
 	let parsed: ReturnType<typeof parse>;
@@ -38,15 +38,15 @@ async function main(): Promise<number> {
 	}
 
 	try {
-		const feed = await buildFeed(positionals[0] ?? "", {
+		const result = await timetreeToIcs(positionals[0] ?? "", {
 			pastDays: toNumber(values["past-days"], "--past-days"),
 			futureDays: toNumber(values["future-days"], "--future-days"),
 		});
 		if (values.output) {
-			await writeFile(values.output, feed.ics);
-			console.error(`${feed.calendar.name}: ${feed.events.length} 件を ${values.output} に書いた`);
+			await writeFile(values.output, result.ics);
+			console.error(`${result.calendar.name}: ${result.events.length} 件を ${values.output} に書いた`);
 		} else {
-			process.stdout.write(feed.ics);
+			process.stdout.write(result.ics);
 		}
 		return 0;
 	} catch (error) {

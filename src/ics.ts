@@ -17,7 +17,7 @@ export function toIcs(events: readonly PublicEvent[], options: IcsOptions = {}):
 	const lines = [
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
-		"PRODID:-//timetree-ics-feed//EN",
+		"PRODID:-//timetree-to-ics//EN",
 		"CALSCALE:GREGORIAN",
 		"METHOD:PUBLISH",
 		...(options.calendarName ? [`X-WR-CALNAME:${escapeText(options.calendarName)}`] : []),
@@ -35,7 +35,7 @@ function eventLines(event: PublicEvent): string[] {
 	return [
 		"BEGIN:VEVENT",
 		// TimeTree の予定の ID は変わらないので、同じ予定は購読の側でも同じ予定として上書きされる
-		`UID:${event.id}@timetree-ics-feed`,
+		`UID:${event.id}@timetree-to-ics`,
 		`DTSTAMP:${utcDateTime(event.updatedAt)}`,
 		`CREATED:${utcDateTime(event.createdAt)}`,
 		`LAST-MODIFIED:${utcDateTime(event.updatedAt)}`,

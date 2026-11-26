@@ -1,8 +1,11 @@
-# timetree-ics-feed
+# timetree-to-ics
+
+[![npm](https://img.shields.io/npm/v/timetree-to-ics)](https://www.npmjs.com/package/timetree-to-ics)
+[![ci](https://github.com/sugurutakahashi-1234/timetree-to-ics/actions/workflows/ci.yml/badge.svg)](https://github.com/sugurutakahashi-1234/timetree-to-ics/actions/workflows/ci.yml)
 
 TimeTree の公開カレンダーを、今後の予定だけの iCalendar（.ics）にする道具。Google カレンダー・Apple のカレンダー・Outlook で、URL から購読できる形で出す。
 
-Turns a TimeTree public calendar into an iCalendar (.ics) feed of upcoming events, so you can subscribe to it from Google Calendar, Apple Calendar or Outlook.
+Converts a TimeTree public calendar into an iCalendar (.ics) file of upcoming events, ready to be subscribed to from Google Calendar, Apple Calendar or Outlook.
 
 > [!WARNING]
 > TimeTree の公式の道具ではありません。TimeTree には予定を外へ出す公式の方法が無く（公式の API は 2023 年 12 月に終了）、この道具はウェブ版が公開カレンダーの表示に使っている口を読みます。口の形が変われば、予告なく動かなくなります。
@@ -20,13 +23,12 @@ Turns a TimeTree public calendar into an iCalendar (.ics) feed of upcoming event
 - 自分の（非公開の）カレンダーは読まない
 - 通知（アラーム）は載せない
 
-## 使い方
+## コマンド
 
-[Bun](https://bun.sh) で動く。
+Node 22 以上で動く。
 
 ```bash
-bunx github:sugurutakahashi-1234/timetree-ics-feed#v0.1.1 \
-  https://timetreeapp.com/public_calendars/<名前> -o calendar.ics
+npx timetree-to-ics https://timetreeapp.com/public_calendars/<名前> -o calendar.ics
 ```
 
 | オプション | 意味 |
@@ -35,15 +37,21 @@ bunx github:sugurutakahashi-1234/timetree-ics-feed#v0.1.1 \
 | `--past-days <日数>` | 今日より前を何日ぶん載せるか（既定 0） |
 | `--future-days <日数>` | 今日から何日先まで載せるか（既定 365） |
 
-### ライブラリとして
+## ライブラリ
 
-```ts
-import { buildFeed } from "timetree-ics-feed";
-
-const { ics, calendar, events } = await buildFeed("<名前>", { pastDays: 0, futureDays: 365 });
+```bash
+npm install timetree-to-ics
 ```
 
-`fetch` だけを使うので、Bun・Deno・Cloudflare Workers のような、TypeScript をそのまま読める環境やバンドラーで動く。読めなかったときは `TimeTreeError` を投げる。
+```ts
+import { timetreeToIcs } from "timetree-to-ics";
+
+const { ics, calendar, events } = await timetreeToIcs("<名前か URL>", { pastDays: 0, futureDays: 365 });
+```
+
+- 使うのは `fetch` だけなので、Node・Bun・Deno・Cloudflare Workers のどれでも動く
+- 読めなかったときは `TimeTreeError` を投げる。空の .ics を返さないのは、購読した側の予定が全部消えるため
+- 予定の一覧だけが要るときは `fetchPublicEvents`、予定の配列を .ics にするだけなら `toIcs` を使う
 
 ## 購読できる URL にする
 
@@ -54,7 +62,7 @@ const { ics, calendar, events } = await buildFeed("<名前>", { pastDays: 0, fut
 定期実行が要らず、作り直しを忘れることもない。
 
 ```ts
-import { buildFeed, TimeTreeError } from "timetree-ics-feed";
+import { TimeTreeError, timetreeToIcs } from "timetree-to-ics";
 
 const CALENDARS = new Set(["<名前>"]); // 自分の Worker で配るカレンダーだけを通す
 
@@ -63,10 +71,10 @@ export default {
     const name = new URL(request.url).pathname.match(/^\/([\w-]+)\.ics$/)?.[1];
     if (!name || !CALENDARS.has(name)) return new Response("Not Found", { status: 404 });
     try {
-      const { ics } = await buildFeed(name);
+      const { ics } = await timetreeToIcs(name);
       return new Response(ics, { headers: { "content-type": "text/calendar; charset=utf-8" } });
     } catch (error) {
-      // 空のカレンダーを返すと、購読した側の予定が全部消える。失敗を返せば、前の内容が残る
+      // 失敗を返せば、購読した側は前の内容を残す
       if (error instanceof TimeTreeError) return new Response(error.message, { status: 502 });
       throw error;
     }
@@ -83,12 +91,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: oven-sh/setup-bun@v2
-      - run: bunx github:sugurutakahashi-1234/timetree-ics-feed#v0.1.1 <名前> -o public/calendar.ics
+      - uses: actions/setup-node@v7
+        with: { node-version: 24 }
+      - run: npx timetree-to-ics <名前> -o public/calendar.ics
       # このあと public/ を GitHub Pages に出す
 ```
 
-### 例 3: 手元の Mac で定期的に作り、どこかへ置く
+### 例 3: 手元のパソコンで定期的に作り、どこかへ置く
 
 `cron` や `launchd` から、上のコマンドを流す。
 
@@ -96,8 +105,7 @@ jobs:
 
 ```bash
 bun install
-bun test          # 偽の返事で確かめる。TimeTree には行かない
-bunx tsc --noEmit
+bun run check     # テスト（偽の返事で確かめ、TimeTree には行かない）・型の検査・組み立て・Node での起動
 ```
 
 ## ライセンス

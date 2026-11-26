@@ -1,6 +1,6 @@
-# timetree-ics-feed
+# timetree-to-ics
 
-TimeTree の公開カレンダーを、今後の予定だけの .ics にする道具（TypeScript のライブラリとコマンド）。公開リポジトリで、誰でも読める。CLAUDE.md はこのファイルへのリンク。
+TimeTree の公開カレンダーを、今後の予定だけの .ics にする道具（TypeScript のライブラリとコマンド。npm の `timetree-to-ics`）。公開リポジトリで、誰でも読める。CLAUDE.md はこのファイルへのリンク。
 
 ## 持ち主として保つ
 
@@ -8,12 +8,14 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 
 - 頼まれた変更を今の構造に足すだけで終えない。似た処理はまとめ、近くで見つけた不具合と古い記述はその場で直す。次にここを触るのも自分なので、後で読みやすい形を選ぶ
 - 外から見える振る舞い（コマンドの引数と出力・ライブラリの関数の形・.ics に書く欄）は、不具合の直しを除いて黙って変えない。変えるときは版を上げ、README を同じ commit で直す
-- git で戻せる手（直す・テストを足す・まとめる）は聞かずに進め、報告に 1 件 1 行で書く。版の札（tag）を打つ・リポジトリの設定を変える・依存を足すは、先に聞く
+- git で戻せる手（直す・テストを足す・まとめる・開発の依存を最新に上げる）は聞かずに進め、報告に 1 件 1 行で書く。npm に出す（版の札を打つ）・リポジトリの設定を変える・使う人に入る依存（`dependencies`）を足すは、先に聞く
+- 使う人に入る依存は持たない（今は 0）。足すと、使う人の側の更新と脆弱性の確かめが増える
 
 ## 守ること
 
 - **道具は、読むことと .ics にすることだけを持つ。** どこに置くか・いつ作り直すか・止まりをどう見張るかは使う人が決める。README に例として書くのはよいが、置き場（Workers の設定・定期実行の設定）をこのリポジトリに入れない
-- **`src/` は `fetch` と標準の関数だけで書く。** Bun・Deno・Cloudflare Workers のどれでも動くようにする。Node の API（`node:*`）は `src/cli.ts` だけで使う
+- **`src/` は `fetch` と標準の関数だけで書く。** Node・Bun・Deno・Cloudflare Workers のどれでも動くようにする。Node の API（`node:*`）は `src/cli.ts` だけで使う
+- **支える Node は、保守の続いている LTS の古い方から。** 今は 22 以上（`package.json` の `engines` と、CI の版の並び）。古い方の保守が終わったら、両方を上げる
 - **テストは TimeTree に行かない。** 返事の形は `test/fixtures.ts` の作り物で再現する。実物の確かめは、手元でコマンドを 1 回流す
 - **実在のカレンダーの名前・予定・人の名前をリポジトリに入れない。** 見本は作り物にする。公開リポジトリで、誰がどのカレンダーを見ているかが分かってしまうため
 - **TimeTree に負担をかけない。** 読むのは 1 回の作成で 2〜3 回まで。並べて何度も読む・短い間隔で読み直す機能は足さない。非公式の口なので、負担が目立てば塞がれる
@@ -33,14 +35,24 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 ## 確かめ方
 
 ```bash
-bun test && bunx tsc --noEmit
-bun src/cli.ts <公開カレンダーの名前か URL> -o /tmp/feed.ics   # 実物の確かめ（名前は commit しない）
+bun run check                                              # テスト・型の検査・組み立て・Node での起動
+node dist/cli.js <公開カレンダーの名前か URL> -o /tmp/out.ics   # 実物の確かめ（名前は commit しない）
 ```
 
-commit の前に lefthook が、commit の書き方・秘密の混入・テストを見る。
+commit の前に lefthook が、commit の書き方・秘密の混入・テストを見る。push と PR では GitHub Actions の `ci` が、Node 22 と 24 で同じ確かめを流す。
+
+## npm に出す
+
+1. `package.json` の `version` と `src/timetree.ts` の `VERSION` を上げる（ずれるとテストが落ちる）。中身を変えた版は minor、直しだけなら patch（1.0 までは minor で互換を壊してよい）
+2. commit して push する
+3. `git tag v<版> && git push origin v<版>` で札を打つと、`release` の仕組みが npm に出して GitHub の Release を作る
+
+- npm へは信頼された出し方（GitHub Actions の OIDC）で出す。npm の鍵は GitHub にも手元にも置かない。信頼の設定は npm の側（`npm trust list timetree-to-ics`）にある
+- 最初の版（0.2.0）だけは、まだ npm に無いと信頼を結べないので、手元から `npm publish` で出した
+- release-please・変更履歴のファイル・PR の題の検査は入れない。1 人で保つ小さな道具で、Release の自動の本文（`--generate-notes`）で足りるため
 
 ## 書き方
 
 - 文書・コメント・エラーの文は日本語で書く（README の頭の 1 段落だけ英語を添える）
 - commit の 1 行目は `type(scope): subject`。type は feat fix docs style refactor perf test build ci chore revert improve
-- 版は `package.json` の `version` と、`v0.1.0` の形の tag でそろえる。使う側は tag を名指しで取り込む
+- 版は `package.json` の `version` と、`v0.2.0` の形の tag でそろえる

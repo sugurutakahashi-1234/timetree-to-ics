@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildFeed } from "../src/feed.ts";
+import { timetreeToIcs } from "../src/convert.ts";
 import { calendarBody, DAY, DEC_1, fakeFetch, rawEvent } from "./fixtures.ts";
 
 // 12/1 の日本時間の夜（UTC の 12:00）に作る
@@ -24,27 +24,27 @@ function routes() {
 	});
 }
 
-describe("buildFeed", () => {
+describe("timetreeToIcs", () => {
 	test("今日以降、1 年先までの予定を、始まりの順に載せる", async () => {
-		const feed = await buildFeed("example_band", { now: NOW, fetch: routes().fetch });
-		expect(feed.events.map((e) => e.title)).toEqual(["今日の終日", "来週"]);
-		expect(feed.calendar.name).toBe("Example Band");
-		expect(feed.ics).toContain("X-WR-CALNAME:Example Band");
+		const result = await timetreeToIcs("example_band", { now: NOW, fetch: routes().fetch });
+		expect(result.events.map((e) => e.title)).toEqual(["今日の終日", "来週"]);
+		expect(result.calendar.name).toBe("Example Band");
+		expect(result.ics).toContain("X-WR-CALNAME:Example Band");
 	});
 
 	test("pastDays で、過ぎた予定も載せる", async () => {
-		const feed = await buildFeed("example_band", { now: NOW, pastDays: 2, fetch: routes().fetch });
-		expect(feed.events.map((e) => e.title)).toEqual(["昨日", "今日の終日", "来週"]);
+		const result = await timetreeToIcs("example_band", { now: NOW, pastDays: 2, fetch: routes().fetch });
+		expect(result.events.map((e) => e.title)).toEqual(["昨日", "今日の終日", "来週"]);
 	});
 
 	test("TimeTree には 1 日広い範囲を頼む", async () => {
 		const { fetch, calls } = routes();
-		await buildFeed("example_band", { now: NOW, fetch });
+		await timetreeToIcs("example_band", { now: NOW, fetch });
 		const eventsCall = calls.find((url) => url.pathname.endsWith("/public_events"));
 		expect(eventsCall?.searchParams.get("from")).toBe(String(NOW.getTime() - DAY));
 	});
 
 	test("負の日数は受けない", async () => {
-		await expect(buildFeed("example_band", { pastDays: -1, fetch: routes().fetch })).rejects.toThrow(RangeError);
+		await expect(timetreeToIcs("example_band", { pastDays: -1, fetch: routes().fetch })).rejects.toThrow(RangeError);
 	});
 });

@@ -53,7 +53,7 @@ describe("fetchPublicEvents", () => {
 		const { fetch, headers } = fakeFetch(() => ({ body: { public_events: [], paging: {} } }));
 		await fetchPublicEvents("example_band", { from: new Date(0), to: new Date(1), fetch });
 		expect(headers[0]?.["X-Timetreea"]).toBe("web/2.1.0/ja");
-		expect(headers[0]?.["User-Agent"]).toStartWith("timetree-ics-feed/");
+		expect(headers[0]?.["User-Agent"]).toStartWith("timetree-to-ics/");
 	});
 
 	test("欄の無い予定も、空の文字列と空の配列にそろえる", async () => {

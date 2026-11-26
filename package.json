@@ -1,36 +1,39 @@
 {
-	"name": "timetree-ics-feed",
-	"version": "0.1.1",
-	"description": "TimeTree の公開カレンダーを、今後の予定だけの iCalendar（.ics）にする。Google カレンダーなどで URL から購読できる",
+	"name": "timetree-to-ics",
+	"version": "0.2.0",
+	"description": "TimeTree の公開カレンダーを、今後の予定だけの iCalendar（.ics）にする。Google カレンダーなどで URL から購読できる / Convert a TimeTree public calendar into an .ics of upcoming events",
 	"license": "MIT",
 	"author": "Suguru Takahashi",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/sugurutakahashi-1234/timetree-ics-feed.git"
+		"url": "git+https://github.com/sugurutakahashi-1234/timetree-to-ics.git"
 	},
-	"keywords": [
-		"timetree",
-		"ical",
-		"ics",
-		"icalendar",
-		"google-calendar"
-	],
+	"homepage": "https://github.com/sugurutakahashi-1234/timetree-to-ics#readme",
+	"bugs": "https://github.com/sugurutakahashi-1234/timetree-to-ics/issues",
+	"keywords": ["timetree", "ical", "ics", "icalendar", "calendar", "google-calendar"],
 	"type": "module",
 	"exports": {
-		".": "./src/index.ts"
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./package.json": "./package.json"
 	},
+	"types": "./dist/index.d.ts",
 	"bin": {
-		"timetree-ics-feed": "./src/cli.ts"
+		"timetree-to-ics": "dist/cli.js"
 	},
-	"files": [
-		"src",
-		"README.md",
-		"LICENSE"
-	],
+	"files": ["dist"],
+	"sideEffects": false,
+	"engines": {
+		"node": ">=22"
+	},
 	"scripts": {
+		"build": "rm -rf dist && tsc -p tsconfig.build.json && chmod +x dist/cli.js",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit",
-		"check": "bun test && tsc --noEmit",
+		"check": "bun test && tsc --noEmit && bun run build && node dist/cli.js --help > /dev/null",
+		"prepublishOnly": "bun run check",
 		"prepare": "lefthook install"
 	},
 	"devDependencies": {

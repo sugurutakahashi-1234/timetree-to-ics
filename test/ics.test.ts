@@ -32,7 +32,7 @@ describe("toIcs", () => {
 		const lines = unfold(toIcs([event()]));
 		expect(lines).toContain("DTSTART:20261201T090000Z");
 		expect(lines).toContain("DTEND:20261201T110000Z");
-		expect(lines).toContain("UID:100@timetree-ics-feed");
+		expect(lines).toContain("UID:100@timetree-to-ics");
 		expect(lines).toContain("DTSTAMP:20261129T000000Z");
 	});
 

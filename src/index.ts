@@ -1,4 +1,4 @@
-export { buildFeed, type Feed, type FeedOptions } from "./feed.ts";
+export { type ConvertOptions, type ConvertResult, timetreeToIcs } from "./convert.ts";
 export { escapeText, fold, type IcsOptions, toIcs } from "./ics.ts";
 export {
 	type FetchLike,
@@ -9,4 +9,5 @@ export {
 	type PublicEvent,
 	TIMETREE_ORIGIN,
 	TimeTreeError,
+	VERSION,
 } from "./timetree.ts";
