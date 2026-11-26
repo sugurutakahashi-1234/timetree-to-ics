@@ -5,11 +5,11 @@
 /** TimeTree の Web 版の起点 */
 export const TIMETREE_ORIGIN = "https://timetreeapp.com";
 
-// 名乗りは 2 つとも付ける。Cloudflare Workers の fetch は User-Agent を付けず、
-// X-Timetreea と User-Agent のどちらかが欠けると、予定の API は 400（code -401）を返す（2026-11 に確かめた。
+// ヘッダーは X-Timetreea と User-Agent の 2 つとも付ける。Cloudflare Workers の fetch は User-Agent を付けず、
+// どちらかが欠けると、予定の API は 400（code -401）を返す（2026-11 に確かめた。
 // 家の回線からは欠けても返るので、手元の確かめだけでは気づけない）
 /** このパッケージの版（TimeTree への User-Agent に使う） */
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 const CLIENT_HEADER = {
 	"X-Timetreea": "web/2.1.0/ja",
 	"User-Agent": `timetree-to-ics/${VERSION} (+https://github.com/sugurutakahashi-1234/timetree-to-ics)`,
@@ -47,6 +47,8 @@ export type PublicEvent = {
 	startAt: number;
 	/** 終了時刻（UNIX 時間のミリ秒）。終日の予定は、最終日の UTC の 0 時（その日を含む） */
 	endAt: number;
+	/** 予定の時間帯（IANA の名前。例 `Asia/Tokyo`）。繰り返しの曜日を正しく出すのに使う。無ければ UTC とみなす */
+	timezone?: string | undefined;
 	locationName: string;
 	locationAddress: string;
 	/** 予定に付いた外部のリンク（チケットのページなど） */
@@ -140,6 +142,7 @@ type RawEvent = {
 	all_day?: boolean;
 	start_at?: number;
 	end_at?: number;
+	start_timezone?: string;
 	location_name?: string;
 	location_address?: string | null;
 	link_url?: string;
@@ -231,6 +234,7 @@ function normalizeEvent(raw: RawEvent): PublicEvent {
 		allDay: raw.all_day === true,
 		startAt,
 		endAt,
+		timezone: typeof raw.start_timezone === "string" && raw.start_timezone ? raw.start_timezone : undefined,
 		locationName: raw.location_name ?? "",
 		locationAddress: raw.location_address ?? "",
 		linkUrl: raw.link_url ?? "",

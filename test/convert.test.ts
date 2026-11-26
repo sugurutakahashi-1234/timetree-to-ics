@@ -44,6 +44,22 @@ describe("timetreeToIcs", () => {
 		expect(eventsCall?.searchParams.get("from")).toBe(String(NOW.getTime() - DAY));
 	});
 
+	test("繰り返しの予定は、UNTIL で終わった物だけを落とす", async () => {
+		const start = DEC_1 - 100 * DAY;
+		const repeating = [
+			rawEvent({ id: 11, title: "先月で終わった", start_at: start, end_at: start + 3600_000, recurrences: ["RRULE:FREQ=WEEKLY;UNTIL=20261101T000000Z"] }),
+			rawEvent({ id: 12, title: "来月まで続く", start_at: start, end_at: start + 3600_000, recurrences: ["RRULE:FREQ=WEEKLY;UNTIL=20270101T000000Z"] }),
+			rawEvent({ id: 13, title: "回数で終わる", start_at: start, end_at: start + 3600_000, recurrences: ["RRULE:FREQ=WEEKLY;COUNT=3"] }),
+			rawEvent({ id: 14, title: "日付だけの UNTIL", start_at: start, end_at: start + 3600_000, recurrences: ["RRULE:FREQ=DAILY;UNTIL=20261201"] }),
+		];
+		const { fetch } = fakeFetch((url) => {
+			if (url.pathname === "/api/v2/public_calendars/example_band") return { body: calendarBody };
+			return { body: { public_events: repeating, paging: {} } };
+		});
+		const result = await timetreeToIcs("example_band", { now: NOW, fetch });
+		expect(result.events.map((e) => e.title)).toEqual(["来月まで続く", "回数で終わる", "日付だけの UNTIL"]);
+	});
+
 	test("負の日数は受けない", async () => {
 		await expect(timetreeToIcs("example_band", { pastDays: -1, fetch: routes().fetch })).rejects.toThrow(RangeError);
 	});

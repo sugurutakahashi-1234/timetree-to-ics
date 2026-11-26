@@ -69,6 +69,30 @@ describe("toIcs", () => {
 		expect(lines).not.toContain("なにか");
 	});
 
+	test("繰り返しの時刻つきの予定は、予定の時間帯の時刻で出す（曜日が UTC でずれないように）", () => {
+		// 日本時間 12/1（火）8:00 は、UTC では 11/30（月）23:00
+		const lines = unfold(
+			toIcs([
+				event({
+					startAt: DEC_1 - 60 * 60 * 1000,
+					endAt: DEC_1 + 60 * 60 * 1000,
+					timezone: "Asia/Tokyo",
+					recurrences: ["RRULE:FREQ=WEEKLY;BYDAY=TU"],
+				}),
+			]),
+		);
+		expect(lines).toContain("DTSTART;TZID=Asia/Tokyo:20261201T080000");
+		expect(lines).toContain("DTEND;TZID=Asia/Tokyo:20261201T100000");
+	});
+
+	test("繰り返しの無い予定と、時間帯が分からない予定は UTC で出す", () => {
+		expect(unfold(toIcs([event({ timezone: "Asia/Tokyo" })]))).toContain("DTSTART:20261201T090000Z");
+		for (const timezone of [undefined, "Not/AZone", "Asia/Tokyo\r\nX"]) {
+			const lines = unfold(toIcs([event({ timezone, recurrences: ["RRULE:FREQ=WEEKLY"] })]));
+			expect(lines).toContain("DTSTART:20261201T090000Z");
+		}
+	});
+
 	test("カレンダーの名前と、空き時間を埋めない印を付ける", () => {
 		const ics = toIcs([event()], { calendarName: "Example Band" });
 		expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
@@ -85,7 +109,7 @@ describe("toIcs", () => {
 });
 
 describe("escapeText", () => {
-	test("\\ ; , と改行（U+2028 も）を逃がす", () => {
+	test("\\ ; , と改行（U+2028 も）をエスケープする", () => {
 		expect(escapeText("a\\b;c,d\ne\u2028f")).toBe("a\\\\b\\;c\\,d\\ne\\nf");
 	});
 });

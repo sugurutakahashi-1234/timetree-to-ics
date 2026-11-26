@@ -16,11 +16,12 @@ test("ical.js で読み直すと、書いた中身がそのまま戻る", () => 
 		{ ...base, id: "1", title: longTitle, note: "1 行目\n2 行目 3 行目", locationName: "Example Hall", url: "https://timetr.ee/p/example_band/1" },
 		{ ...base, id: "2", title: "遠征", allDay: true, startAt: DEC_1, endAt: DEC_1 + 2 * DAY },
 		{ ...base, id: "3", title: "毎週", recurrences: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+		{ ...base, id: "4", title: "毎週の朝", startAt: DEC_1 - 3600_000, timezone: "Asia/Tokyo", recurrences: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
 	];
 	const calendar = new ICAL.Component(ICAL.parse(toIcs(events, { calendarName: "Example Band" })));
 	expect(calendar.getFirstPropertyValue("x-wr-calname")).toBe("Example Band");
 
-	const [timed, allDay, weekly] = calendar.getAllSubcomponents("vevent").map((c) => new ICAL.Event(c));
+	const [timed, allDay, weekly, morning] = calendar.getAllSubcomponents("vevent").map((c) => new ICAL.Event(c));
 	expect(timed?.uid).toBe("1@timetree-to-ics");
 	expect(timed?.summary).toBe(longTitle);
 	expect(timed?.description).toBe("1 行目\n2 行目\n3 行目\n\nhttps://timetr.ee/p/example_band/1");
@@ -34,5 +35,9 @@ test("ical.js で読み直すと、書いた中身がそのまま戻る", () => 
 	expect(allDay?.endDate.toString()).toBe("2026-12-04");
 
 	expect(weekly?.isRecurring()).toBe(true);
+
+	// 繰り返しの朝の予定は、日本時間の日付と時刻で読める（UTC の前の日にならない）
+	expect(morning?.startDate.toString()).toBe("2026-12-01T08:00:00");
+	expect(morning?.component.getFirstProperty("dtstart")?.getParameter("tzid")).toBe("Asia/Tokyo");
 	expect(calendar.getAllSubcomponents("vevent").every((c) => c.getFirstPropertyValue("transp") === "TRANSPARENT")).toBe(true);
 });

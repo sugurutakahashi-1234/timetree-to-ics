@@ -34,7 +34,7 @@ export type ConvertResult = {
 
 /**
  * TimeTree の公開カレンダーを、今後の予定だけの .ics にする。
- * 含めるのは、今より後に終わり（繰り返しの予定は終わりを問わない）、futureDays 日先までに始まる予定。
+ * 含めるのは、今より後に終わり（繰り返しの予定は、UNTIL で終わっていない物）、futureDays 日先までに始まる予定。
  * @param calendar 公開カレンダーの名前か URL（`example_band`・`https://timetreeapp.com/public_calendars/example_band`・`https://timetr.ee/p/example_band`）
  * @throws {TypeError} 名前か URL の形が違うとき
  * @throws {RangeError} 日数が 0〜3650 の範囲にないとき、now が無効な日付のとき
@@ -60,7 +60,7 @@ export async function timetreeToIcs(calendar: string, options: ConvertOptions = 
 	]);
 
 	const events = fetched
-		.filter((event) => (event.recurrences.length > 0 || endOf(event) > from) && event.startAt <= to)
+		.filter((event) => (event.recurrences.length > 0 ? !endedBefore(event, from) : endOf(event) > from) && event.startAt <= to)
 		.filter((event) => options.filter?.(event) ?? true)
 		.sort((a, b) => a.startAt - b.startAt || a.id.localeCompare(b.id));
 
@@ -70,6 +70,23 @@ export async function timetreeToIcs(calendar: string, options: ConvertOptions = 
 // 終日の予定の endAt は最終日の 0 時なので、その日の終わりまでを予定の中と見る
 function endOf(event: PublicEvent): number {
 	return event.allDay ? event.endAt + DAY_MS : event.endAt;
+}
+
+// 繰り返しの予定は、RRULE の UNTIL が from より前なら、もう起きないので落とす。
+// COUNT で終わる繰り返しは、最後の回を数えないと分からないので残す
+function endedBefore(event: PublicEvent, from: number): boolean {
+	const matches = event.recurrences
+		.filter((line) => line.startsWith("RRULE"))
+		.map((line) => /[;:]UNTIL=(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})Z?)?/.exec(line));
+	if (matches.length === 0) return false;
+	let last = Number.NEGATIVE_INFINITY;
+	for (const match of matches) {
+		if (!match) return false;
+		const [, y, mo, d, h = "23", mi = "59", s = "59"] = match;
+		last = Math.max(last, Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s)));
+	}
+	// UNTIL は最後の回の始まり。その回の長さの分だけ後ろまでは、まだ終わっていない
+	return last + (endOf(event) - event.startAt) < from;
 }
 
 function days(value: number, name: string): number {

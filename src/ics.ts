@@ -59,11 +59,11 @@ function eventLines(event: PublicEvent): string[] {
 					// TimeTree の終わりは最後の日を含み、iCalendar の DTEND は含まないので 1 日足す
 					`DTEND;VALUE=DATE:${utcDate(event.endAt + DAY_MS)}`,
 				]
-			: [`DTSTART:${utcDateTime(event.startAt)}`, `DTEND:${utcDateTime(event.endAt)}`]),
+			: timedLines(event)),
 		`SUMMARY:${escapeText(event.title)}`,
 		...(description ? [`DESCRIPTION:${escapeText(description)}`] : []),
 		...(location ? [`LOCATION:${escapeText(location)}`] : []),
-		// URL と繰り返しの行は逃がさずに書くので、改行を含む物は捨てる（任意の行を差し込ませない）
+		// URL と繰り返しの行はエスケープせずに書くので、改行を含む物は捨てる（任意の行を差し込ませない）
 		...(event.url && !/[\r\n]/.test(event.url) ? [`URL:${event.url}`] : []),
 		// 繰り返しの行は TimeTree の書いたまま渡す。形の分からない行は捨てる
 		...event.recurrences.filter((line) => /^(RRULE|EXRULE|RDATE|EXDATE)[:;]/.test(line) && !/[\r\n]/.test(line)),
@@ -73,7 +73,7 @@ function eventLines(event: PublicEvent): string[] {
 	];
 }
 
-/** RFC 5545 の TEXT の書き方（\ ; , と改行を逃がす）。TimeTree の本文に入る U+2028 も改行にする */
+/** RFC 5545 の TEXT の書き方（\ ; , と改行をエスケープする）。TimeTree の本文に入る U+2028 も改行にする */
 export function escapeText(text: string): string {
 	return text
 		.replace(/\\/g, "\\\\")
@@ -98,6 +98,46 @@ export function fold(line: string): string {
 		width += bytes;
 	}
 	return out;
+}
+
+// 時刻つきの予定は UTC で書く。ただし繰り返しの予定は、予定の時間帯の時刻で書く。
+// UTC で書くと、繰り返しの曜日と日付が UTC で数えられ、日本時間の 0〜9 時の予定が前の日にずれるため。
+// VTIMEZONE は付けず、IANA の名前だけを書く（Google・Apple・Outlook はこの名前で読む）
+function timedLines(event: PublicEvent): string[] {
+	const zone = event.recurrences.length > 0 ? validZone(event.timezone) : undefined;
+	if (!zone) return [`DTSTART:${utcDateTime(event.startAt)}`, `DTEND:${utcDateTime(event.endAt)}`];
+	return [
+		`DTSTART;TZID=${zone}:${localDateTime(event.startAt, zone)}`,
+		`DTEND;TZID=${zone}:${localDateTime(event.endAt, zone)}`,
+	];
+}
+
+function validZone(zone: string | undefined): string | undefined {
+	if (!zone || zone === "UTC" || !/^[A-Za-z0-9_+/-]{1,64}$/.test(zone)) return undefined;
+	try {
+		new Intl.DateTimeFormat("en-US", { timeZone: zone });
+		return zone;
+	} catch {
+		return undefined;
+	}
+}
+
+function localDateTime(ms: number, zone: string): string {
+	const parts = Object.fromEntries(
+		new Intl.DateTimeFormat("en-US", {
+			timeZone: zone,
+			hourCycle: "h23",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+		})
+			.formatToParts(new Date(ms))
+			.map((part) => [part.type, part.value]),
+	);
+	return `${parts.year}${parts.month}${parts.day}T${parts.hour}${parts.minute}${parts.second}`;
 }
 
 function utcDateTime(ms: number): string {
