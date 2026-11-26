@@ -1,7 +1,7 @@
 # GitHub Actions の仕組み（.github/workflows）の点検の道具。版はここで固定し、lefthook と CI が同じ版を使う
 [tools]
 # 守りの穴（権限の広すぎ・キャッシュの汚染・式の差し込み・乗っ取られた Actions）
-zizmor = "1.33.1"
+zizmor = "1.32.0"
 # 書き間違い（式の型・文法・run: の中のシェルの誤り）
 actionlint = "1.7.12"
 # Actions を commit の SHA で固定しているか
