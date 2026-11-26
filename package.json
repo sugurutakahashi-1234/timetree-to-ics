@@ -1,6 +1,6 @@
 {
 	"name": "timetree-to-ics",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "TimeTree の公開カレンダーを、今後の予定だけの iCalendar（.ics）にする。Google カレンダーなどで URL から購読できる / Convert a TimeTree public calendar into an .ics of upcoming events",
 	"license": "MIT",
 	"author": "Suguru Takahashi",

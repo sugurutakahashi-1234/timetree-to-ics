@@ -3,17 +3,31 @@
 
 import type { PublicEvent } from "./timetree.ts";
 
+/** .ics を返すときの Content-Type。`new Response(ics, { headers: { "content-type": ICS_CONTENT_TYPE } })` */
+export const ICS_CONTENT_TYPE = "text/calendar; charset=utf-8";
+
+/** {@link toIcs} のオプション */
 export type IcsOptions = {
-	/** カレンダーの名前（X-WR-CALNAME）。購読したときの初めの表示名になる */
-	calendarName?: string;
-	/** 読み直しの間隔の目安（ISO 8601 の期間）。Apple・Outlook は従い、Google は従わない */
-	refreshInterval?: string;
+	/** カレンダーの名前（X-WR-CALNAME）。購読したときの最初の表示名になる */
+	calendarName?: string | undefined;
+	/** 再取得の間隔の目安（ISO 8601 の期間。例 `PT6H`）。Apple・Outlook は従い、Google は従わない。既定は `PT6H` */
+	refreshInterval?: string | undefined;
 };
+
+const DURATION = /^P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+S)?)?$/;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * 予定の配列を .ics の文字列にする（CRLF の改行・75 バイトで折り返し）。
+ * 予定を絞りたいときは、絞った配列を渡す: `toIcs(events.filter((e) => !e.allDay), { calendarName })`
+ * @throws {RangeError} refreshInterval が ISO 8601 の期間でないとき
+ */
 export function toIcs(events: readonly PublicEvent[], options: IcsOptions = {}): string {
 	const refresh = options.refreshInterval ?? "PT6H";
+	if (!DURATION.test(refresh)) {
+		throw new RangeError(`refreshInterval は ISO 8601 の期間（例 PT6H）にしてください: ${refresh}`);
+	}
 	const lines = [
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
@@ -49,9 +63,10 @@ function eventLines(event: PublicEvent): string[] {
 		`SUMMARY:${escapeText(event.title)}`,
 		...(description ? [`DESCRIPTION:${escapeText(description)}`] : []),
 		...(location ? [`LOCATION:${escapeText(location)}`] : []),
-		...(event.url ? [`URL:${event.url}`] : []),
+		// URL と繰り返しの行は逃がさずに書くので、改行を含む物は捨てる（任意の行を差し込ませない）
+		...(event.url && !/[\r\n]/.test(event.url) ? [`URL:${event.url}`] : []),
 		// 繰り返しの行は TimeTree の書いたまま渡す。形の分からない行は捨てる
-		...event.recurrences.filter((line) => /^(RRULE|EXRULE|RDATE|EXDATE)[:;]/.test(line)),
+		...event.recurrences.filter((line) => /^(RRULE|EXRULE|RDATE|EXDATE)[:;]/.test(line) && !/[\r\n]/.test(line)),
 		// 人の予定なので、購読した人の空き時間を埋めない
 		"TRANSP:TRANSPARENT",
 		"END:VEVENT",

@@ -8,16 +8,19 @@ import { TimeTreeError } from "./timetree.ts";
 
 const usage = `使い方: timetree-to-ics <公開カレンダーの名前か URL> [オプション]
 
-TimeTree の公開カレンダーを読み、今後の予定を iCalendar（.ics）にして出す。
+TimeTree の公開カレンダーを読み、今後の予定を iCalendar（.ics）にして出力します。
+名前か URL は、名前・https://timetreeapp.com/public_calendars/<名前>・アプリの共有で出る https://timetr.ee/p/<名前> のどれでも受け付けます。
 
 オプション:
-  -o, --output <ファイル>   書き出す先。省くと標準出力
-      --past-days <日数>    今日より前を何日ぶん載せるか（既定 0）
-      --future-days <日数>  今日から何日先まで載せるか（既定 365）
-  -h, --help                この説明
+  -o, --output <ファイル>   出力先のファイル。省略すると標準出力
+      --past-days <日数>    今より何日前までに終わった予定も含めるか（デフォルト 0）
+      --future-days <日数>  今から何日先までに始まる予定を含めるか（デフォルト 365）
+  -h, --help                この説明を表示
+
+終了コード: 0 = 成功、1 = TimeTree を読めなかった・入力が正しくない、2 = 使い方の誤り
 
 例:
-  npx timetree-to-ics https://timetreeapp.com/public_calendars/<名前> -o calendar.ics`;
+  npx timetree-to-ics https://timetr.ee/p/<名前> -o calendar.ics`;
 
 async function main(): Promise<number> {
 	let parsed: ReturnType<typeof parse>;
@@ -44,7 +47,7 @@ async function main(): Promise<number> {
 		});
 		if (values.output) {
 			await writeFile(values.output, result.ics);
-			console.error(`${result.calendar.name}: ${result.events.length} 件を ${values.output} に書いた`);
+			console.error(`${result.calendar.name}: ${result.events.length} 件を ${values.output} に書き出しました`);
 		} else {
 			process.stdout.write(result.ics);
 		}
@@ -73,7 +76,7 @@ function parse() {
 function toNumber(value: string | undefined, name: string): number | undefined {
 	if (value === undefined) return undefined;
 	const n = Number(value);
-	if (!Number.isFinite(n)) throw new RangeError(`${name} には数を渡す: ${value}`);
+	if (!Number.isFinite(n)) throw new RangeError(`${name} には数を渡してください: ${value}`);
 	return n;
 }
 
