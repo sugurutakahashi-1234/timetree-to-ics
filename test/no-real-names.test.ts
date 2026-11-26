@@ -14,7 +14,7 @@ const FILES = [
 
 test("公開カレンダーの名前は、見本の example_band だけ", () => {
 	const found = FILES.flatMap((file) =>
-		[...readFileSync(file, "utf8").matchAll(/public_calendars\/([A-Za-z0-9_-]+)/g)]
+		[...readFileSync(file, "utf8").matchAll(/(?:public_calendars|timetr\.ee\/p)\/([A-Za-z0-9_-]+)/g)]
 			.map((m) => m[1] ?? "")
 			.filter((name) => !ALLOWED.has(name))
 			.map((name) => `${file}: ${name}`),
