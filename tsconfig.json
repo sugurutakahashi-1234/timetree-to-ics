@@ -1,10 +1,15 @@
 {
 	"compilerOptions": {
 		"target": "es2024",
-		"lib": ["es2024", "dom"],
+		"lib": [
+			"es2024",
+			"dom"
+		],
 		"module": "preserve",
 		"moduleResolution": "bundler",
-		"types": ["bun"],
+		"types": [
+			"bun"
+		],
 		"strict": true,
 		"noEmit": true,
 		"noUncheckedIndexedAccess": true,
@@ -13,5 +18,9 @@
 		"verbatimModuleSyntax": true,
 		"skipLibCheck": true
 	},
-	"include": ["src", "test"]
+	"include": [
+		"src",
+		"test",
+		"scripts"
+	]
 }

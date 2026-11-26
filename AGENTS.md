@@ -21,6 +21,8 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 | `src/cli.ts` | コマンド。Node の API（`node:*`）はここだけで使う |
 | `src/index.ts` | 公開する物の一覧 |
 | `test/fixtures.ts` | TimeTree の返事の作り物 |
+| `test/cli.test.ts`・`test/ical-parse.test.ts` | コマンドの引数と終了コード・ical.js で .ics を読み直す確かめ |
+| `scripts/live-check.ts` | 本物の公開カレンダーを読む確かめ（`live.yml` が流す） |
 
 ## 守ること
 
@@ -41,6 +43,8 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 - GitHub Actions は commit の SHA で固定する。足したら `mise exec -- pinact run` で固定する
 - 仕組み（`.github/workflows`）は `actionlint`・`pinact run --check`・`zizmor` で点検する。道具の版は `mise.toml` で固定し、lefthook（仕組みを変えた commit）と CI の `workflows` が同じ版で流す
 - 出す仕組み（`release.yml`）では、キャッシュを使わず、lockfile の外から物を入れない（zizmor の cache-poisoning・adhoc-packages）
+- TimeTree の API の変化に気づくのは `live.yml`（毎週月曜）。本物の公開カレンダーを 1 回読む（`scripts/live-check.ts`）。読むカレンダーの名前は GitHub の秘密の設定 `TIMETREE_LIVE_CALENDAR` に置き、ログにも名前を出さない
+- GitHub は、公開リポジトリに 60 日 commit が無いと、定期の仕組み（`live.yml`・`update.yml`）を止める。止まったら Actions のタブから有効に戻す
 - 版を最新に保つのは `update.yml`（毎月 1 日）。npm の依存と点検の道具を、7 日たった版に上げ、確かめが通れば main に直接入れる。失敗したら GitHub が持ち主にメールで知らせる
 - GitHub Actions の SHA は `update.yml` では上げられない（GitHub Actions の鍵では `.github/workflows` を書き換えて push できない）。上げられる版は `update` の実行の要約に出るので、手を入れるときに `mise exec -- pinact run --update --min-age 7` で上げる
 
