@@ -7,7 +7,7 @@ export const TIMETREE_ORIGIN = "https://timetreeapp.com";
 // 名乗りは 2 つとも付ける。Cloudflare Workers の fetch は User-Agent を付けず、
 // X-Timetreea と User-Agent のどちらかが欠けると、予定の口は 400（code -401）を返す（2026-11 に確かめた。
 // 家の回線からは欠けても返るので、手元の確かめだけでは気づけない）
-export const VERSION = "0.2.1";
+export const VERSION = "1.0.0";
 const CLIENT_HEADER = {
 	"X-Timetreea": "web/2.1.0/ja",
 	"User-Agent": `timetree-to-ics/${VERSION} (+https://github.com/sugurutakahashi-1234/timetree-to-ics)`,

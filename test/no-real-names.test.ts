@@ -9,6 +9,7 @@ const FILES = [
 	...["src", "test"].flatMap((dir) => readdirSync(dir).map((name) => join(dir, name))),
 	"README.md",
 	"AGENTS.md",
+	"CONTRIBUTING.md",
 ];
 
 test("公開カレンダーの名前は、見本の example_band だけ", () => {
