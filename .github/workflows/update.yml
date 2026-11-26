@@ -1,0 +1,73 @@
+# 月 1 回、npm の依存と点検の道具の版を上げ、確かめが通れば main に入れる。外のボットは使わない。
+# 公開から 7 日たった版だけを入れる（npm は bunfig.toml、道具は --minimum-release-age）。
+# GitHub Actions の SHA は、この仕組みの鍵（GITHUB_TOKEN）では .github/workflows を書き換えられないので、
+# 上げられる版があれば実行の要約に出すだけにする（上げるのは手を入れるときに pinact run --update --min-age 7）。
+# 失敗したら GitHub がリポジトリの持ち主にメールで知らせる。
+name: update
+
+on:
+  schedule:
+    - cron: "17 0 1 * *" # 毎月 1 日の UTC 0:17（日本時間 9:17）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 上げた結果を main に入れる
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          no-cache: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+        with:
+          cache: false
+      - name: npm の依存を上げる（7 日たった版だけ）
+        run: bun update --latest
+      - name: 点検の道具の版を上げる（7 日たった版だけ）
+        run: mise upgrade --bump --pin --minimum-release-age 7d
+      - name: GitHub Actions の SHA に上げられる版があれば、要約に出す
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          pinact run --update --min-age 7
+          if git diff --quiet -- .github/workflows; then
+            echo "GitHub Actions: 上げる版は無かった" >> "$GITHUB_STEP_SUMMARY"
+          else
+            { echo "## GitHub Actions に上げられる版がある（手で上げる）"; echo '```diff'; git diff -- .github/workflows; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            git checkout -- .github/workflows
+          fi
+      - name: 確かめる
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bun run check
+          actionlint
+          pinact run --check
+          zizmor --no-progress .github/workflows
+      - name: 変わっていれば main に入れる
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "npm の依存と点検の道具: 上げる物は無かった" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          { echo "## 上げた物"; echo '```diff'; git diff -- package.json mise.toml; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "build(deps): npm の依存と点検の道具の版を上げる（月 1 回の自動）"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main

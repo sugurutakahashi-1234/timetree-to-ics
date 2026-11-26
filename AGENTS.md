@@ -41,6 +41,8 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 - GitHub Actions は commit の SHA で固定する。足したら `mise exec -- pinact run` で固定する
 - 仕組み（`.github/workflows`）は `actionlint`・`pinact run --check`・`zizmor` で点検する。道具の版は `mise.toml` で固定し、lefthook（仕組みを変えた commit）と CI の `workflows` が同じ版で流す
 - 出す仕組み（`release.yml`）では、キャッシュを使わず、lockfile の外から物を入れない（zizmor の cache-poisoning・adhoc-packages）
+- 版を最新に保つのは `update.yml`（毎月 1 日）。npm の依存と点検の道具を、7 日たった版に上げ、確かめが通れば main に直接入れる。失敗したら GitHub が持ち主にメールで知らせる
+- GitHub Actions の SHA は `update.yml` では上げられない（GitHub Actions の鍵では `.github/workflows` を書き換えて push できない）。上げられる版は `update` の実行の要約に出るので、手を入れるときに `mise exec -- pinact run --update --min-age 7` で上げる
 
 ## TimeTree の API（2026-11 に確かめた形）
 
