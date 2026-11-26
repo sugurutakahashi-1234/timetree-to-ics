@@ -1,5 +1,5 @@
-# v0.2.0 の形の札を push したら、npm に出して GitHub の Release を作る。
-# npm へは信頼された出し方（OIDC）で出すので、npm の鍵を GitHub に置かない。来歴（provenance）も自動で付く。
+# v1.0.0 の形のタグを push したら、npm に出して GitHub の Release を作る。
+# npm へは Trusted Publishing（OIDC）で出すので、npm の鍵を GitHub に置かない。来歴（provenance）も自動で付く。
 name: release
 
 on:
@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: write # GitHub の Release を作る
-  id-token: write # npm の信頼された出し方
+  id-token: write # npm の Trusted Publishing
 
 jobs:
   publish:
@@ -17,18 +17,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false # 後の段に GitHub の鍵を残さない
+          fetch-depth: 0 # Release の本文を、前のタグからの commit で作る
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          no-cache: true # 出す仕組みでは、前の実行の残り物を使わない
+          no-cache: true # 公開のワークフローでは、前の実行の残り物を使わない
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          # Node 24 に入っている npm（11.19）で、信頼された出し方（11.5.1 以上）が使える
+          # Node 24 に入っている npm（11.19）で、Trusted Publishing（11.5.1 以上）が使える
           node-version: 24
           registry-url: https://registry.npmjs.org
-          # 出す仕組みでは、前の実行の残り物（キャッシュ）を使わない
+          # 公開のワークフローでは、前の実行の残り物（キャッシュ）を使わない
           package-manager-cache: false
       - run: bun install --frozen-lockfile
-      - name: 札と package.json の版がそろっているか
+      - name: タグと package.json の版がそろっているか
         run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
       - name: npm に出す（同じ版が出ていれば飛ばす。最初の版は手元から出したため）
         run: |
@@ -41,4 +42,9 @@ jobs:
       - name: GitHub の Release を作る
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+        # 本文は、前のタグからの commit のうち、使う人に関わる物（feat・fix・improve・perf）の 1 行目
+        run: |
+          gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 && exit 0
+          prev=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2> /dev/null || true)
+          git log --no-merges --format='- %s' ${prev:+"$prev.."}"$GITHUB_REF_NAME" | grep -E '^- (feat|fix|improve|perf)(\(|:|!)' > notes.md || echo "- 内部の整理だけで、使い方の変更はありません" > notes.md
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md
