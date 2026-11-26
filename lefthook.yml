@@ -1,0 +1,19 @@
+# commit の前に動く検査（lefthook。bun install のときに入る）
+
+commit-msg:
+  jobs:
+    # 1 行目は「type(scope): subject」。type は下の語だけ
+    - name: commit-message
+      run: |
+        head -1 {1} | grep -qE '^((feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|improve)(\([^)]+\))?!?: [^ ].*|Merge .+|Revert ".+|(fixup|squash|amend)! .+)$' || { echo "commit の 1 行目は「type(scope): subject」にする。type は feat fix docs style refactor perf test build ci chore revert improve"; exit 1; }
+
+pre-commit:
+  jobs:
+    # 秘密の混入を commit の前に止める。gitleaks が入っていない環境では飛ばす（GitHub の push protection が後ろで守る）
+    - name: gitleaks
+      run: if command -v gitleaks >/dev/null; then gitleaks git --staged --redact --no-banner; else echo "gitleaks が無いので飛ばした"; fi
+    - name: test
+      glob:
+        - "src/*.ts"
+        - "test/*.ts"
+      run: bun test && bunx tsc --noEmit
