@@ -1,4 +1,4 @@
-# push と PR のたびに、テスト・型の検査・組み立てと、Node での起動を確かめる。
+# push と PR のたびに、テスト・型の検査・ビルドと、Node での起動を確かめる。
 # 手元の commit は lefthook が見るので、ここが要るのは手元を通らない PR のため。
 name: ci
 
@@ -27,7 +27,7 @@ jobs:
       - run: bun run check
       - run: npm pack --dry-run
 
-  # 仕組みそのものの点検（書き間違い・SHA の固定漏れ・守りの穴）。道具の版は mise.toml で固定している
+  # ワークフローそのものの点検（書き間違い・SHA の固定漏れ・セキュリティ上の問題）。ツールの版は mise.toml で固定している
   workflows:
     runs-on: ubuntu-latest
     steps:

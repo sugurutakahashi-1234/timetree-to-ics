@@ -122,7 +122,7 @@ describe("toIcs の守り", () => {
 
 	test("改行を含む URL と繰り返しの行は書かない", () => {
 		const lines = toIcs([event]).replace(/\r\n /g, "").split("\r\n");
-		// 本文（DESCRIPTION）には改行を逃がした形で残ってよいが、行として差し込まれてはいけない
+		// 本文（DESCRIPTION）には改行をエスケープした形で残ってよいが、行として差し込まれてはいけない
 		expect(lines.filter((line) => /^(ATTENDEE|X-EVIL|URL)[:;]/.test(line))).toEqual([]);
 		expect(lines.some((line) => line.startsWith("RRULE"))).toBe(false);
 	});

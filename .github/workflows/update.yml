@@ -1,6 +1,6 @@
 # 月 1 回、npm の依存と点検の道具の版を上げ、確かめが通れば main に入れる。外のボットは使わない。
 # 公開から 7 日たった版だけを入れる（npm は bunfig.toml、道具は --minimum-release-age）。
-# GitHub Actions の SHA は、この仕組みの鍵（GITHUB_TOKEN）では .github/workflows を書き換えられないので、
+# GitHub Actions の SHA は、このワークフローの鍵（GITHUB_TOKEN）では .github/workflows を書き換えられないので、
 # 上げられる版があれば実行の要約に出すだけにする（上げるのは手を入れるときに pinact run --update --min-age 7）。
 # 失敗したら GitHub がリポジトリの持ち主にメールで知らせる。
 name: update

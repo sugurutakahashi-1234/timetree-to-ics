@@ -1,5 +1,5 @@
 // 本物の TimeTree の公開カレンダーを読み、API の形が変わっていないかを確かめる（週 1 回の live.yml が流す）。
-// テストは作り物の返事しか使わないので、TimeTree の側の変更にはこれでしか気づけない。
+// テストはテスト用データの返事しか使わないので、TimeTree の側の変更にはこれでしか気づけない。
 // 読むカレンダーは環境変数 TIMETREE_LIVE_CALENDAR で渡す。公開のログに出るので、名前と予定の中身は表示しない
 import ICAL from "ical.js";
 import { fetchPublicEvents, timetreeToIcs } from "../src/index.ts";

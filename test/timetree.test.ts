@@ -49,7 +49,7 @@ describe("fetchPublicEvents", () => {
 		expect(calls[0]?.searchParams.get("utc_offset")).toBe("32400");
 	});
 
-	test("名乗りを 2 つとも付ける（片方が欠けると、Cloudflare Workers からは 400 になる）", async () => {
+	test("X-Timetreea と User-Agent のヘッダーを 2 つとも付ける（片方が欠けると、Cloudflare Workers からは 400 になる）", async () => {
 		const { fetch, headers } = fakeFetch(() => ({ body: { public_events: [], paging: {} } }));
 		await fetchPublicEvents("example_band", { from: new Date(0), to: new Date(1), fetch });
 		expect(headers[0]?.["X-Timetreea"]).toBe("web/2.1.0/ja");
