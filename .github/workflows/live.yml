@@ -6,6 +6,11 @@ on:
   schedule:
     - cron: "41 0 * * 1" # 毎週月曜の UTC 0:41（日本時間 9:41）
   workflow_dispatch:
+    inputs:
+      calendar:
+        description: "読む公開カレンダーの名前（空なら秘密の設定の物）。知らせの流れを確かめるときは、無い名前を入れてわざと失敗させる"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -21,5 +26,5 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: 本物の公開カレンダーを読む
         env:
-          TIMETREE_LIVE_CALENDAR: ${{ secrets.TIMETREE_LIVE_CALENDAR }}
+          TIMETREE_LIVE_CALENDAR: ${{ inputs.calendar || secrets.TIMETREE_LIVE_CALENDAR }}
         run: bun scripts/live-check.ts
