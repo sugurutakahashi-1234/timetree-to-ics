@@ -3,11 +3,11 @@
 [![npm](https://img.shields.io/npm/v/timetree-to-ics)](https://www.npmjs.com/package/timetree-to-ics)
 [![ci](https://github.com/sugurutakahashi-1234/timetree-to-ics/actions/workflows/ci.yml/badge.svg)](https://github.com/sugurutakahashi-1234/timetree-to-ics/actions/workflows/ci.yml)
 
-TimeTree の公開カレンダーを、今後の予定だけの iCalendar（.ics）にする道具。Google カレンダー・Apple のカレンダー・Outlook で購読できる形で出す。
+TimeTree の公開カレンダーを、今後の予定だけを含む iCalendar（.ics）に変換するツールです。Google カレンダー・Apple カレンダー・Outlook で購読できる形式で出力します。
 
 ## English
 
-Converts a [TimeTree](https://timetreeapp.com) public calendar into an iCalendar (.ics) file of upcoming events, so you can subscribe to it from Google Calendar, Apple Calendar or Outlook.
+Converts a [TimeTree](https://timetreeapp.com) public calendar into an iCalendar (.ics) file of upcoming events, so you can subscribe to it from Google Calendar, Apple Calendar, or Outlook.
 
 ```bash
 npx timetree-to-ics https://timetreeapp.com/public_calendars/<name> -o calendar.ics   # Node 24+
@@ -18,34 +18,34 @@ import { timetreeToIcs } from "timetree-to-ics";
 const { ics } = await timetreeToIcs("<name or URL>");
 ```
 
-- Public calendars only. Your private calendars are not supported.
+- Public calendars only. Private calendars are not supported.
 - Unofficial: it reads the internal API used by the TimeTree web app, which may change without notice.
-- To get updates in your calendar app, serve the .ics from a URL (see the examples below) and subscribe to that URL.
+- To receive updates in your calendar app, serve the .ics file from a URL (see the examples below) and subscribe to that URL.
 - Documentation and messages are in Japanese.
 
 ## 注意
 
 > [!WARNING]
-> TimeTree の公式の道具ではありません。TimeTree には予定を外へ出す公式の方法が無く（公式の API は 2023 年 12 月に終了）、この道具は TimeTree のウェブ版が内部で使っている非公開の API を読みます。API が変われば、予告なく動かなくなります。
-> 予定の内容の著作権はカレンダーの持ち主にあります。作った .ics や、それを置いた URL は自分の購読にだけ使い、人に配らないでください。
+> TimeTree の公式ツールではありません。TimeTree には予定をエクスポートする公式の方法がなく（公式 API は 2023 年 12 月に終了）、このツールは TimeTree の Web 版が内部で使っている非公開 API を読み取ります。API が変更されると、予告なく動かなくなります。
+> 予定の内容の著作権はカレンダーの作成者にあります。生成した .ics や、それを公開した URL は自分で購読するためだけに使い、第三者には共有しないでください。
 
 ## できること
 
-- ログインなしで誰でも見られる公開カレンダーを読み、今日以降の予定を .ics にする（過ぎた予定も載せたいときは `--past-days`）
-- .ics に載せるのは、題・メモ・場所・TimeTree の予定へのリンク・繰り返しの指定
-- 予定ごとに変わらない ID を付けるので、購読した側では、変わった予定は書き換わり、消えた予定は消える
-- 時刻は UTC で書く。カレンダーのアプリが、見ている人の時刻に直して出す
-- 予定は「空き時間を埋めない」印を付ける（人の予定なので、自分の空き時間が埋まって見えないように）
+- ログインなしで誰でも閲覧できる公開カレンダーを読み取り、今日以降の予定を .ics に変換します（過去の予定も含めたい場合は `--past-days`）
+- .ics に含めるのは、タイトル・メモ・場所・TimeTree の予定へのリンク・繰り返しの設定です
+- 予定ごとに固定の ID を付けるので、購読している側では、変更された予定は更新され、削除された予定は消えます
+- 時刻は UTC で出力します。カレンダーアプリが、利用者のタイムゾーンに合わせて表示します
+- 予定には「空き時間をふさがない」設定を付けます（他人の予定なので、自分の空き時間が埋まって見えないようにするため）
 
 ## できないこと
 
-- 自分の（公開していない）カレンダーは読めない
-- 通知（アラーム）は載せない
-- .ics を作るだけで、URL として配ることはしない（下の「購読する」）
+- 自分の（公開していない）カレンダーは読み取れません
+- 通知（アラーム）は含めません
+- .ics を生成するだけで、URL での配信は行いません（下の「購読する」を参照）
 
 ## 公開カレンダーの名前
 
-ブラウザで公開カレンダーを開いたときの URL の `public_calendars/` の後ろが名前です。名前の代わりに、URL をそのまま渡しても使えます。
+ブラウザで公開カレンダーを開いたときの URL のうち、`public_calendars/` より後ろの部分が名前です。名前の代わりに、URL をそのまま渡すこともできます。
 
 ```text
 https://timetreeapp.com/public_calendars/example_band
@@ -54,17 +54,17 @@ https://timetreeapp.com/public_calendars/example_band
 
 ## コマンド
 
-Node 24 以上で動く。
+Node 24 以上で動作します。
 
 ```bash
 npx timetree-to-ics <名前か URL> -o calendar.ics
 ```
 
-| オプション | 意味 |
+| オプション | 説明 |
 |---|---|
-| `-o, --output <ファイル>` | 書き出す先。省くと標準出力 |
-| `--past-days <日数>` | 今日より前を何日ぶん載せるか（既定 0） |
-| `--future-days <日数>` | 今日から何日先まで載せるか（既定 365） |
+| `-o, --output <ファイル>` | 出力先のファイル。省略すると標準出力 |
+| `--past-days <日数>` | 今日より何日前までの予定を含めるか（デフォルト 0） |
+| `--future-days <日数>` | 今日から何日先までの予定を含めるか（デフォルト 365） |
 
 ## ライブラリ
 
@@ -75,36 +75,36 @@ npm install timetree-to-ics
 ```ts
 import { timetreeToIcs } from "timetree-to-ics";
 
-// 既定は、今日から 365 日先まで
+// デフォルトは、今日から 365 日先まで
 const { ics, calendar, events } = await timetreeToIcs("<名前か URL>");
-// ics: .ics の中身（文字列） / calendar: カレンダーの名前など / events: 載せた予定（始まりの順）
+// ics: .ics の内容（文字列） / calendar: カレンダーの名前など / events: 含めた予定（開始日時の順）
 ```
 
-- 使うのは `fetch` だけなので、`fetch` のある環境（Node・Bun・Deno・Cloudflare Workers）で動く。確かめているのは Node 24
-- 投げるエラーは 3 つ
-  - `TimeTreeError`: TimeTree を読めなかった（届かない・名前が無い・返事の形が変わった）。空の .ics は返さない
-  - `TypeError`: 名前か URL の形が違う
-  - `RangeError`: 日数が負
-- 予定の一覧だけが要るときは `fetchPublicEvents(名前, { from, to })`、予定の配列を .ics にするだけなら `toIcs(予定の配列, { calendarName })`
+- 依存しているのは `fetch` だけなので、`fetch` が使える環境（Node・Bun・Deno・Cloudflare Workers）で動作します。動作を確認しているのは Node 24 です
+- スローするエラーは 3 種類です
+  - `TimeTreeError`: TimeTree から取得できなかった（接続できない・指定した名前のカレンダーがない・レスポンスの形式が変わった）。空の .ics は返しません
+  - `TypeError`: 名前または URL の形式が正しくない
+  - `RangeError`: 日数が負の値
+- 予定の一覧だけが必要な場合は `fetchPublicEvents(名前, { from, to })`、予定の配列を .ics に変換するだけなら `toIcs(予定の配列, { calendarName })` を使います
 
 ## 購読する
 
-手元で作った .ics をカレンダーのアプリに取り込むと、その時点の写しが入るだけで、後の変更は追いかけません。追いかけるには、.ics を URL で配り、その URL を購読します。
+手元で生成した .ics をカレンダーアプリにインポートしても、その時点のコピーが取り込まれるだけで、以降の変更は反映されません。変更を反映させるには、.ics を URL で配信し、その URL を購読します。
 
-1. 下の例のどれかで、.ics を URL で配る
-2. Google カレンダーなら、左の「他のカレンダー」の「＋」→「URL で追加」に、その URL を入れる
-3. Google カレンダーは半日〜1 日おきに読み直す（間隔は選べない）
+1. 下の例のいずれかの方法で、.ics を URL で配信します
+2. Google カレンダーの場合は、左の「他のカレンダー」の「＋」→「URL で追加」に、その URL を入力します
+3. Google カレンダーは半日〜1 日おきに再取得します（間隔は変更できません）
 
-URL は自分の購読にだけ使い、人に教えないでください。
+URL は自分で購読するためだけに使い、第三者には教えないでください。
 
-### 例 1: Cloudflare Workers で、読まれた時に作る
+### 例 1: Cloudflare Workers で、リクエスト時に生成する
 
-定期実行が要らず、作り直しを忘れることもない。
+定期実行が不要で、再生成を忘れる心配もありません。
 
 ```ts
 import { TimeTreeError, timetreeToIcs } from "timetree-to-ics";
 
-const CALENDARS = new Set(["<名前>"]); // 配ってよいカレンダーだけを通す
+const CALENDARS = new Set(["<名前>"]); // 配信してよいカレンダーだけを通す
 
 export default {
   async fetch(request: Request): Promise<Response> {
@@ -116,7 +116,7 @@ export default {
         headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "no-store" },
       });
     } catch (error) {
-      // 失敗を返せば、購読した側は前の内容を残す。理由はログにだけ出す
+      // エラーを返せば、購読している側には前回の内容が残る。原因はログにだけ出力する
       if (error instanceof TimeTreeError) {
         console.log(error.message);
         return new Response("Bad Gateway", { status: 502 });
@@ -127,9 +127,9 @@ export default {
 };
 ```
 
-### 例 2: GitHub Actions で毎日作り、GitHub Pages に置く
+### 例 2: GitHub Actions で毎日生成し、GitHub Pages で配信する
 
-骨組みです。Pages の設定は、リポジトリの Settings → Pages で「GitHub Actions」を選んでおく。
+最小限のひな形です。Pages の設定は、リポジトリの Settings → Pages で「GitHub Actions」を選んでおきます。
 
 ```yaml
 on:
@@ -148,13 +148,13 @@ jobs:
       - uses: actions/deploy-pages@v5
 ```
 
-手元のパソコンの `cron` や `launchd` から上のコマンドを流し、どこかへ置く形でもよい。
+手元のマシンの `cron` や `launchd` から上のコマンドを実行し、任意の場所に配置する方法でもかまいません。
 
 ## 動かなくなったら
 
-TimeTree の API が変わると動かなくなります。気づいたら [issue](https://github.com/sugurutakahashi-1234/timetree-to-ics/issues) で知らせてもらえると助かります。直し方が分かっていれば、PR も歓迎します（手順は [CONTRIBUTING.md](CONTRIBUTING.md)）。
+TimeTree の API が変更されると動かなくなります。気づいた場合は、[issue](https://github.com/sugurutakahashi-1234/timetree-to-ics/issues) で報告していただけると助かります。修正方法が分かる場合は、PR も歓迎します（手順は [CONTRIBUTING.md](CONTRIBUTING.md) を参照）。
 
-issue に書いてよいカレンダーの名前は、誰でも見られる公開カレンダーの物だけにしてください。
+issue に書くカレンダーの名前は、誰でも閲覧できる公開カレンダーのものだけにしてください。
 
 ## ライセンス
 
