@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { escapeText, fold, toIcs } from "../src/ics.ts";
+import { escapeText, fold, ICS_CONTENT_TYPE, toIcs } from "../src/ics.ts";
 import type { PublicEvent } from "../src/timetree.ts";
 import { DAY, DEC_1 } from "./fixtures.ts";
 
@@ -110,6 +110,26 @@ describe("toIcs", () => {
 		const lines = unfold(toIcs([]));
 		expect(lines[0]).toBe("BEGIN:VCALENDAR");
 		expect(lines).not.toContain("BEGIN:VEVENT");
+	});
+});
+
+describe("toIcs の行の差し込みの防ぎと検査", () => {
+	test("改行を含む URL と繰り返しの行は書かない", () => {
+		const lines = unfold(
+			toIcs([event({ url: "https://example.com/x\r\nATTENDEE:mailto:evil@example.com", recurrences: ["RRULE:FREQ=DAILY\r\nX-EVIL:1"] })]),
+		);
+		// 本文（DESCRIPTION）には改行をエスケープした形で残ってよいが、行として差し込まれてはいけない
+		expect(lines.filter((line) => /^(ATTENDEE|X-EVIL|URL)[:;]/.test(line))).toEqual([]);
+		expect(lines.some((line) => line.startsWith("RRULE"))).toBe(false);
+	});
+
+	test("再取得の間隔が ISO 8601 の期間でなければ RangeError", () => {
+		expect(() => toIcs([], { refreshInterval: "6h" })).toThrow(RangeError);
+		expect(() => toIcs([], { refreshInterval: "P1D" })).not.toThrow();
+	});
+
+	test("Content-Type の定数", () => {
+		expect(ICS_CONTENT_TYPE).toBe("text/calendar; charset=utf-8");
 	});
 });
 

@@ -20,6 +20,7 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 | `src/convert.ts` | 入口の `timetreeToIcs`（読む → 今日以降に絞る → .ics） |
 | `src/cli.ts` | コマンド。Node の API（`node:*`）はここだけで使う |
 | `src/index.ts` | 公開する物の一覧 |
+| `test/<src のファイル名>.test.ts` | `src/` のファイルごとのテスト |
 | `test/fixtures.ts` | TimeTree の返事のテスト用データ |
 | `test/cli.test.ts`・`test/ical-parse.test.ts` | コマンドの引数・出力・終了コード（`test/cli-preload.ts` で TimeTree の代わりにテスト用データを返す）・ical.js で .ics を読み直す確かめ |
 | `scripts/live-check.ts` | 本物の公開カレンダーを読む確かめ（`live.yml` が流す） |

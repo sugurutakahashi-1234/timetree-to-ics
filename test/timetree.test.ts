@@ -2,16 +2,31 @@ import { describe, expect, test } from "bun:test";
 import { fetchPublicCalendar, fetchPublicEvents, parseCalendarRef, TimeTreeError } from "../src/timetree.ts";
 import { calendarBody, DEC_1, fakeFetch, rawEvent } from "./fixtures.ts";
 
+const window = { from: new Date(0), to: new Date(1) };
+
 describe("parseCalendarRef", () => {
-	test("名前と URL のどちらからも名前を取り出す", () => {
+	test("名前・Web 版の URL・アプリの共有で出る短い URL から、名前を取り出す", () => {
 		expect(parseCalendarRef("example_band")).toBe("example_band");
 		expect(parseCalendarRef("https://timetreeapp.com/public_calendars/example_band")).toBe("example_band");
 		expect(parseCalendarRef("https://timetreeapp.com/public_calendars/example_band?tab=info")).toBe("example_band");
+		expect(parseCalendarRef("https://timetr.ee/p/example_band")).toBe("example_band");
+		expect(parseCalendarRef("https://timetr.ee/p/example_band/123456")).toBe("example_band");
 	});
 
 	test("名前に使えない字は受けない", () => {
 		expect(() => parseCalendarRef("../etc")).toThrow(TypeError);
 		expect(() => parseCalendarRef("")).toThrow(TypeError);
+	});
+
+	test("非公開のカレンダーの URL は、入力を文に含めずに TypeError にする", () => {
+		const secret = "https://timetreeapp.com/calendars/SECRET_TOKEN";
+		expect(() => parseCalendarRef(secret)).toThrow(TypeError);
+		try {
+			parseCalendarRef(secret);
+		} catch (error) {
+			expect((error as Error).message).not.toContain("SECRET_TOKEN");
+			expect((error as Error).message).toContain("非公開");
+		}
 	});
 });
 
@@ -25,13 +40,6 @@ describe("fetchPublicCalendar", () => {
 			name: "Example Band",
 			url: "https://timetr.ee/p/example_band",
 		});
-	});
-
-	test("無い名前（400）は TimeTreeError にする", async () => {
-		const { fetch } = fakeFetch(() => ({ status: 400, body: {} }));
-		const error = await fetchPublicCalendar("no_such", { fetch }).catch((e: unknown) => e);
-		expect(error).toBeInstanceOf(TimeTreeError);
-		expect((error as TimeTreeError).status).toBe(400);
 	});
 });
 
@@ -51,34 +59,81 @@ describe("fetchPublicEvents", () => {
 
 	test("X-Timetreea と User-Agent のヘッダーを 2 つとも付ける（片方が欠けると、Cloudflare Workers からは 400 になる）", async () => {
 		const { fetch, headers } = fakeFetch(() => ({ body: { public_events: [], paging: {} } }));
-		await fetchPublicEvents("example_band", { from: new Date(0), to: new Date(1), fetch });
+		await fetchPublicEvents("example_band", { ...window, fetch });
 		expect(headers[0]?.["X-Timetreea"]).toBe("web/2.1.0/ja");
 		expect(headers[0]?.["User-Agent"]).toStartWith("timetree-to-ics/");
 	});
 
-	test("欄の無い予定も、空の文字列と空の配列にそろえる", async () => {
+	test("欄の無い予定も、空の文字列と空の配列にそろえ、時間帯を読む", async () => {
 		const { fetch } = fakeFetch(() => ({
 			body: { public_events: [rawEvent({ note: undefined, recurrences: null, location_address: null })], paging: {} },
 		}));
-		const [event] = await fetchPublicEvents("example_band", { from: new Date(0), to: new Date(1), fetch });
+		const [event] = await fetchPublicEvents("example_band", { ...window, fetch });
 		expect(event?.note).toBe("");
 		expect(event?.recurrences).toEqual([]);
 		expect(event?.locationAddress).toBe("");
+		expect(event?.timezone).toBe("Asia/Tokyo");
 	});
 
-	test("返事の形が違えば TimeTreeError にする", async () => {
-		const { fetch } = fakeFetch(() => ({ body: { events: [] } }));
-		await expect(fetchPublicEvents("example_band", { from: new Date(0), to: new Date(1), fetch })).rejects.toThrow(
-			TimeTreeError,
-		);
+	test("中止の合図を fetch に渡す", async () => {
+		const signals: (AbortSignal | undefined)[] = [];
+		const controller = new AbortController();
+		await fetchPublicEvents("example_band", {
+			...window,
+			signal: controller.signal,
+			fetch: async (_url, init) => {
+				signals.push(init?.signal);
+				return new Response(JSON.stringify({ public_events: [], paging: {} }));
+			},
+		});
+		expect(signals[0]).toBe(controller.signal);
 	});
 
-	test("届かないときも TimeTreeError にする", async () => {
-		const fetch = async () => {
-			throw new Error("network down");
-		};
-		await expect(fetchPublicEvents("example_band", { from: new Date(0), to: new Date(1), fetch })).rejects.toThrow(
-			TimeTreeError,
-		);
+	test("無効な日付・逆の範囲は RangeError で、TimeTree に行かない", async () => {
+		const { fetch, calls } = fakeFetch(() => ({ body: { public_events: [], paging: {} } }));
+		await expect(fetchPublicEvents("example_band", { from: new Date("x"), to: new Date(1), fetch })).rejects.toThrow(RangeError);
+		await expect(fetchPublicEvents("example_band", { from: new Date(2), to: new Date(1), fetch })).rejects.toThrow(RangeError);
+		expect(calls).toEqual([]);
+	});
+
+	test("続きが上限（20 回）を超えたら、範囲を狭めるよう RangeError にする", async () => {
+		const { fetch, calls } = fakeFetch(() => ({ body: { public_events: [], paging: { next: true, next_cursor: "more" } } }));
+		await expect(fetchPublicEvents("example_band", { ...window, fetch })).rejects.toThrow(RangeError);
+		expect(calls).toHaveLength(20);
+	});
+});
+
+describe("TimeTreeError の種類", () => {
+	test("届かないときは network で、元のエラーを cause に持つ", async () => {
+		const cause = new Error("down");
+		const error = await fetchPublicEvents("example_band", {
+			...window,
+			fetch: async () => {
+				throw cause;
+			},
+		}).catch((e: unknown) => e);
+		expect(error).toBeInstanceOf(TimeTreeError);
+		expect((error as TimeTreeError).kind).toBe("network");
+		expect((error as TimeTreeError).cause).toBe(cause);
+	});
+
+	test("エラーの番号は http で、status に入る（無い名前は 400、混み合うと 429）", async () => {
+		for (const status of [400, 429]) {
+			const { fetch } = fakeFetch(() => ({ status, body: {} }));
+			const error = (await fetchPublicCalendar("example_band", { fetch }).catch((e: unknown) => e)) as TimeTreeError;
+			expect(error).toBeInstanceOf(TimeTreeError);
+			expect(error.kind).toBe("http");
+			expect(error.status).toBe(status);
+		}
+	});
+
+	test("返事の形が違う・null・予定の時刻が欠けているときは format", async () => {
+		const bodies = [{ events: [] }, null, { public_events: [rawEvent({ start_at: undefined })], paging: {} }];
+		for (const body of bodies) {
+			const { fetch } = fakeFetch(() => ({ body }));
+			const error = (await fetchPublicEvents("example_band", { ...window, fetch }).catch((e: unknown) => e)) as TimeTreeError;
+			expect(error).toBeInstanceOf(TimeTreeError);
+			expect(error.kind).toBe("format");
+		}
 	});
 });

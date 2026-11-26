@@ -60,7 +60,31 @@ describe("timetreeToIcs", () => {
 		expect(result.events.map((e) => e.title)).toEqual(["来月まで続く", "回数で終わる", "日付だけの UNTIL"]);
 	});
 
-	test("負の日数は受けない", async () => {
-		await expect(timetreeToIcs("example_band", { pastDays: -1, fetch: routes().fetch })).rejects.toThrow(RangeError);
+	test("初回が過去でも、繰り返しの予定は残す", async () => {
+		const weekly = rawEvent({ id: 9, title: "毎週", start_at: DEC_1 - 30 * DAY, end_at: DEC_1 - 30 * DAY + 3600_000, recurrences: ["RRULE:FREQ=WEEKLY"] });
+		const { fetch } = fakeFetch((url) =>
+			url.pathname.endsWith("/public_events") ? { body: { public_events: [weekly], paging: {} } } : { body: calendarBody },
+		);
+		const result = await timetreeToIcs("example_band", { now: NOW, fetch });
+		expect(result.events.map((e) => e.title)).toEqual(["毎週"]);
+	});
+
+	test("filter で絞り、ics で表示名を上書きできる", async () => {
+		const result = await timetreeToIcs("example_band", {
+			now: NOW,
+			fetch: routes().fetch,
+			filter: (e) => !e.allDay,
+			ics: { calendarName: "上書き" },
+		});
+		expect(result.events.map((e) => e.title)).toEqual(["来週"]);
+		expect(result.ics).toContain("X-WR-CALNAME:上書き");
+	});
+
+	test("負の日数・大きすぎる日数・無効な now は RangeError で、TimeTree に行かない", async () => {
+		const { fetch, calls } = routes();
+		await expect(timetreeToIcs("example_band", { pastDays: -1, fetch })).rejects.toThrow(RangeError);
+		await expect(timetreeToIcs("example_band", { futureDays: 1e9, fetch })).rejects.toThrow(RangeError);
+		await expect(timetreeToIcs("example_band", { now: new Date("x"), fetch })).rejects.toThrow(RangeError);
+		expect(calls).toEqual([]);
 	});
 });
