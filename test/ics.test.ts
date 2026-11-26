@@ -83,13 +83,18 @@ describe("toIcs", () => {
 		);
 		expect(lines).toContain("DTSTART;TZID=Asia/Tokyo:20261201T080000");
 		expect(lines).toContain("DTEND;TZID=Asia/Tokyo:20261201T100000");
+		// 使った時間帯の定義を 1 つだけ付ける
+		expect(lines.filter((line) => line === "TZID:Asia/Tokyo")).toHaveLength(1);
+		expect(lines).toContain("TZOFFSETTO:+0900");
 	});
 
 	test("繰り返しの無い予定と、時間帯が分からない予定は UTC で出す", () => {
 		expect(unfold(toIcs([event({ timezone: "Asia/Tokyo" })]))).toContain("DTSTART:20261201T090000Z");
-		for (const timezone of [undefined, "Not/AZone", "Asia/Tokyo\r\nX"]) {
+		// 夏時間のある時間帯は、定義を正しく書けないので UTC にする
+		for (const timezone of [undefined, "Not/AZone", "Asia/Tokyo\r\nX", "America/New_York"]) {
 			const lines = unfold(toIcs([event({ timezone, recurrences: ["RRULE:FREQ=WEEKLY"] })]));
 			expect(lines).toContain("DTSTART:20261201T090000Z");
+			expect(lines).not.toContain("BEGIN:VTIMEZONE");
 		}
 	});
 

@@ -37,6 +37,7 @@ export function toIcs(events: readonly PublicEvent[], options: IcsOptions = {}):
 		...(options.calendarName ? [`X-WR-CALNAME:${escapeText(options.calendarName)}`] : []),
 		`REFRESH-INTERVAL;VALUE=DURATION:${refresh}`,
 		`X-PUBLISHED-TTL:${refresh}`,
+		...timezoneLines(events),
 		...events.flatMap(eventLines),
 		"END:VCALENDAR",
 	];
@@ -102,24 +103,60 @@ export function fold(line: string): string {
 
 // 時刻つきの予定は UTC で書く。ただし繰り返しの予定は、予定の時間帯の時刻で書く。
 // UTC で書くと、繰り返しの曜日と日付が UTC で数えられ、日本時間の 0〜9 時の予定が前の日にずれるため。
-// VTIMEZONE は付けず、IANA の名前だけを書く（Google・Apple・Outlook はこの名前で読む）
+// 時間帯の定義（VTIMEZONE）を正しく書けるのは、夏時間の無い時間帯（Asia/Tokyo など）だけなので、
+// 夏時間のある時間帯の予定は UTC のまま書く
+type Zone = { tzid: string; offset: string };
+
 function timedLines(event: PublicEvent): string[] {
-	const zone = event.recurrences.length > 0 ? validZone(event.timezone) : undefined;
+	const zone = recurringZone(event);
 	if (!zone) return [`DTSTART:${utcDateTime(event.startAt)}`, `DTEND:${utcDateTime(event.endAt)}`];
 	return [
-		`DTSTART;TZID=${zone}:${localDateTime(event.startAt, zone)}`,
-		`DTEND;TZID=${zone}:${localDateTime(event.endAt, zone)}`,
+		`DTSTART;TZID=${zone.tzid}:${localDateTime(event.startAt, zone.tzid)}`,
+		`DTEND;TZID=${zone.tzid}:${localDateTime(event.endAt, zone.tzid)}`,
 	];
 }
 
-function validZone(zone: string | undefined): string | undefined {
-	if (!zone || zone === "UTC" || !/^[A-Za-z0-9_+/-]{1,64}$/.test(zone)) return undefined;
-	try {
-		new Intl.DateTimeFormat("en-US", { timeZone: zone });
-		return zone;
-	} catch {
+function timezoneLines(events: readonly PublicEvent[]): string[] {
+	const zones = new Map<string, string>();
+	for (const event of events) {
+		const zone = recurringZone(event);
+		if (zone) zones.set(zone.tzid, zone.offset);
+	}
+	return [...zones].flatMap(([tzid, offset]) => [
+		"BEGIN:VTIMEZONE",
+		`TZID:${tzid}`,
+		"BEGIN:STANDARD",
+		"DTSTART:19700101T000000",
+		`TZOFFSETFROM:${offset}`,
+		`TZOFFSETTO:${offset}`,
+		"END:STANDARD",
+		"END:VTIMEZONE",
+	]);
+}
+
+function recurringZone(event: PublicEvent): Zone | undefined {
+	const tzid = event.timezone;
+	if (event.allDay || event.recurrences.length === 0 || !tzid || tzid === "UTC" || !/^[A-Za-z0-9_+/-]{1,64}$/.test(tzid)) {
 		return undefined;
 	}
+	try {
+		// 予定の年の 1 月と 7 月で時差が同じなら、夏時間が無いとみなす
+		const year = new Date(event.startAt).getUTCFullYear();
+		const offset = utcOffset(tzid, Date.UTC(year, 0, 1));
+		return offset && offset === utcOffset(tzid, Date.UTC(year, 6, 1)) ? { tzid, offset } : undefined;
+	} catch {
+		return undefined; // 知らない時間帯の名前
+	}
+}
+
+// "GMT+09:00" → "+0900"（"GMT" だけのときは +0000）
+function utcOffset(zone: string, ms: number): string | undefined {
+	const name = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "longOffset" })
+		.formatToParts(new Date(ms))
+		.find((part) => part.type === "timeZoneName")?.value;
+	if (name === "GMT") return "+0000";
+	const match = name?.match(/^GMT([+-])(\d{2}):(\d{2})$/);
+	return match ? `${match[1]}${match[2]}${match[3]}` : undefined;
 }
 
 function localDateTime(ms: number, zone: string): string {

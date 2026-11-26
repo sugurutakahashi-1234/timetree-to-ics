@@ -39,5 +39,11 @@ test("ical.js で読み直すと、書いた中身がそのまま戻る", () => 
 	// 繰り返しの朝の予定は、日本時間の日付と時刻で読める（UTC の前の日にならない）
 	expect(morning?.startDate.toString()).toBe("2026-12-01T08:00:00");
 	expect(morning?.component.getFirstProperty("dtstart")?.getParameter("tzid")).toBe("Asia/Tokyo");
+	// 付けた時間帯の定義で、UTC の時刻にも正しく戻せる
+	const zones = calendar.getAllSubcomponents("vtimezone").map((c) => new ICAL.Timezone(c));
+	expect(zones.map((z) => z.tzid)).toEqual(["Asia/Tokyo"]);
+	const start = morning?.startDate.clone();
+	if (start) start.zone = zones[0] as ICAL.Timezone;
+	expect(start?.toJSDate().getTime()).toBe(DEC_1 - 3600_000);
 	expect(calendar.getAllSubcomponents("vevent").every((c) => c.getFirstPropertyValue("transp") === "TRANSPARENT")).toBe(true);
 });
