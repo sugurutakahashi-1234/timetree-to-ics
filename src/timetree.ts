@@ -9,7 +9,7 @@ const TIMETREE_ORIGIN = "https://timetreeapp.com";
 // どちらかが欠けると、予定の API は 400（code -401）を返す（2026-11 に確かめた。
 // 家の回線からは欠けても返るので、手元の確かめだけでは気づけない）
 /** このパッケージの版（TimeTree への User-Agent に使う） */
-export const VERSION = "2.0.0";
+export const VERSION = "2.0.1";
 const CLIENT_HEADER = {
 	"X-Timetreea": "web/2.1.0/ja",
 	"User-Agent": `timetree-to-ics/${VERSION} (+https://github.com/sugurutakahashi-1234/timetree-to-ics)`,
