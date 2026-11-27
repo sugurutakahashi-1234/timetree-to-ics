@@ -11,9 +11,9 @@ export const DEC_1 = Date.UTC(2026, 11, 1);
 export const calendarBody = {
 	public_calendar: {
 		id: 1,
-		alias_code: "example_band",
-		name: "Example Band",
-		url: "https://timetr.ee/p/example_band",
+		alias_code: "example_team",
+		name: "Example Team",
+		url: "https://timetr.ee/p/example_team",
 	},
 };
 
@@ -21,8 +21,8 @@ export function rawEvent(overrides: Record<string, unknown> = {}) {
 	return {
 		id: 100,
 		public_calendar_id: 1,
-		title: "ワンマンライブ",
-		note: "開場 18:00 / 開演 18:30",
+		title: "定例ミーティング",
+		note: "会場 3F 会議室 / 資料は前日に共有",
 		all_day: false,
 		start_at: DEC_1 + 9 * 60 * 60 * 1000,
 		end_at: DEC_1 + 11 * 60 * 60 * 1000,
@@ -31,7 +31,7 @@ export function rawEvent(overrides: Record<string, unknown> = {}) {
 		location_name: "",
 		location_address: null,
 		link_url: "",
-		url: "https://timetr.ee/p/example_band/100",
+		url: "https://timetr.ee/p/example_team/100",
 		recurrences: null,
 		created_at: DEC_1 - 30 * DAY,
 		updated_at: DEC_1 - 2 * DAY,

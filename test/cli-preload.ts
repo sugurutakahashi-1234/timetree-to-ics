@@ -5,7 +5,7 @@ import { calendarBody, DAY, fakeFetch, rawEvent } from "./fixtures.ts";
 const start = Date.now() + 7 * DAY;
 
 const { fetch } = fakeFetch((url) => {
-	if (url.pathname === "/api/v2/public_calendars/example_band") return { body: calendarBody };
+	if (url.pathname === "/api/v2/public_calendars/example_team") return { body: calendarBody };
 	if (url.pathname.endsWith("/public_events")) {
 		return { body: { public_events: [rawEvent({ start_at: start, end_at: start + 2 * 60 * 60 * 1000 })], paging: {} } };
 	}

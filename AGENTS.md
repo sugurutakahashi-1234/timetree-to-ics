@@ -32,7 +32,7 @@ TimeTree の公開カレンダーを、今後の予定だけの .ics にする�
 - **対応する Node は 24 以上の 1 つだけ。** 1 人で保つので、確かめる版を 1 つに絞る。`package.json` の `engines` と CI の `node-version` を同じ版にし、次の LTS に移るときは両方を上げる
 - **使う人に入る依存は持たない（今は 0 個）。** 足すと、使う人の側の更新と脆弱性の確かめが増える
 - **テストは TimeTree に行かない。** 返事の形は `test/fixtures.ts` のテスト用データで再現する
-- **実在のカレンダーの名前・予定・人の名前をリポジトリに入れない。** 見本の名前は `example_band` だけ。`test/no-real-names.test.ts` が、`src`・`test`・README・CONTRIBUTING.md・このファイルの `public_calendars/<名前>` と `timetr.ee/p/<名前>` を見て止める。公開リポジトリと npm で、誰がどのカレンダーを見ているかが分かってしまうため
+- **実在のカレンダーの名前・予定・人の名前をリポジトリに入れない。** 見本の名前は `example_team` だけ。`test/no-real-names.test.ts` が、`src`・`test`・README・CONTRIBUTING.md・このファイルの `public_calendars/<名前>` と `timetr.ee/p/<名前>` を見て止める。公開リポジトリと npm で、誰がどのカレンダーを見ているかが分かってしまうため
 - **TimeTree に負担をかけない。** 読むのは 1 回の作成で 2〜3 回まで。並べて何度も読む・短い間隔で読み直す機能は足さない。非公式の API なので、負担が目立てば塞がれる
 - **読めなかったときは、空の .ics を返さず `TimeTreeError` を投げる。** 空を返すと、購読した側の予定が全部消える
 

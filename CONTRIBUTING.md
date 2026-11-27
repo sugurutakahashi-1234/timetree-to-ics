@@ -17,7 +17,7 @@ GitHub Actions の設定（`.github/workflows`）を変えるときは、[mise](
 ## 決まり
 
 - テストは TimeTree の API を呼ばない。レスポンスは `test/fixtures.ts` のテスト用データで再現する
-- 実在の公開カレンダーの名前をリポジトリに入れない。見本の名前は `example_band` だけ（テストが止める）
+- 実在の公開カレンダーの名前をリポジトリに入れない。見本の名前は `example_team` だけ（テストが止める）
 - 使う人に入る依存（`dependencies`）は足さない
 - commit の 1 行目は `type(scope): subject` の形（type の一覧は `lefthook.yml`）
 - 文書・コメント・メッセージは日本語。README の「English」の節だけ英語

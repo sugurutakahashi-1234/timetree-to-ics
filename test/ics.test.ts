@@ -6,7 +6,7 @@ import { DAY, DEC_1 } from "./fixtures.ts";
 function event(overrides: Partial<PublicEvent> = {}): PublicEvent {
 	return {
 		id: "100",
-		title: "ワンマンライブ",
+		title: "定例ミーティング",
 		note: "",
 		allDay: false,
 		startAt: DEC_1 + 9 * 60 * 60 * 1000,
@@ -50,13 +50,13 @@ describe("toIcs", () => {
 					note: "1 行目\n2 行目",
 					locationName: "Example Hall",
 					locationAddress: "東京都",
-					url: "https://timetr.ee/p/example_band/100",
+					url: "https://timetr.ee/p/example_team/100",
 				}),
 			]),
 		);
-		expect(full).toContain("DESCRIPTION:1 行目\\n2 行目\\n\\nhttps://timetr.ee/p/example_band/100");
+		expect(full).toContain("DESCRIPTION:1 行目\\n2 行目\\n\\nhttps://timetr.ee/p/example_team/100");
 		expect(full).toContain("LOCATION:Example Hall\\, 東京都");
-		expect(full).toContain("URL:https://timetr.ee/p/example_band/100");
+		expect(full).toContain("URL:https://timetr.ee/p/example_team/100");
 
 		const bare = unfold(toIcs([event()]));
 		expect(bare.some((line) => line.startsWith("DESCRIPTION"))).toBe(false);
@@ -99,10 +99,10 @@ describe("toIcs", () => {
 	});
 
 	test("カレンダーの名前と、空き時間を埋めない印を付ける", () => {
-		const ics = toIcs([event()], { calendarName: "Example Band" });
+		const ics = toIcs([event()], { calendarName: "Example Team" });
 		expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
 		expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
-		expect(unfold(ics)).toContain("X-WR-CALNAME:Example Band");
+		expect(unfold(ics)).toContain("X-WR-CALNAME:Example Team");
 		expect(unfold(ics)).toContain("TRANSP:TRANSPARENT");
 	});
 

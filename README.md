@@ -50,16 +50,16 @@ const { ics } = await timetreeToIcs("<name or URL>");
 
 目的に合った使い方を選んでください。自分で進める場合の手順と、AI エージェント（Claude Code・Codex・Gemini CLI など）にそのまま渡せる指示文（プロンプト）の例を載せています。`https://timetr.ee/p/<名前>`（`<名前1>`・`<名前2>` も同様）の部分は、TimeTree アプリの「共有」で取得できる URL に置き換えてください。
 
-### 推しのライブ予定を Google カレンダーで追いかける
+### 取引先や団体の公開カレンダーを Google カレンダーに表示する
 
-公開カレンダーの予定が追加・変更・中止されても、Google カレンダーに自動で反映されます。毎週のように予定が増えるカレンダーに向いています。自分で進める場合は、「購読する」の 3 つの方法から 1 つを選んで URL を用意し、Google カレンダーの「URL で追加」に登録します。
+店舗の営業日、施設やコミュニティのイベント、チームの試合日程など、TimeTree で公開されている予定を、普段使っている Google カレンダーに重ねて表示できます。公開カレンダーの予定が追加・変更・中止されると、Google カレンダーにも自動で反映されます。予定が頻繁に更新されるカレンダーに向いています。自分で進める場合は、「購読する」の 3 つの方法から 1 つを選んで URL を用意し、Google カレンダーの「URL で追加」に登録します。
 
 ```text
 TimeTree の公開カレンダー https://timetr.ee/p/<名前> を、Google カレンダーで購読して更新に追従させたい。
 npm の timetree-to-ics の README の「購読する」から方法を 1 つ選んで、URL を作るところまでやって。
 ```
 
-### 複数の公開カレンダーをまとめて追いかける
+### 複数の公開カレンダーをまとめて購読する
 
 カレンダーごとに配信用 URL を用意し、それぞれを購読します。「購読する」の例 1（Cloudflare Workers）を使えば、コードの `CALENDARS` に名前を並べるだけで、1 つの Worker から複数のカレンダーを配信できます。
 
@@ -91,6 +91,7 @@ timetree-to-ics のライブラリで、https://timetr.ee/p/<名前> の予定�
 | 予定が追加・変更されたら反映されますか？ | はい。URL で購読していれば、次回の再取得時に反映されます。Google カレンダーの再取得間隔は半日〜1 日おきです。 |
 | TimeTree で削除された予定は消えますか？ | はい。.ics からなくなった予定は、購読先のカレンダーからも削除されます。 |
 | 終了した予定はどうなりますか？ | デフォルトでは終了した予定は .ics から除外されるため、購読先からも消えます。過去の予定を残したい場合は `--past-days` を指定してください。 |
+| 時刻のある予定が終日の予定として表示されます | TimeTree 側で終日の予定として登録されている可能性があります。このツールは TimeTree に登録された日時をそのまま出力します。メモに書かれた時刻は、予定の説明欄で確認できます。 |
 | 繰り返しの予定は扱えますか？ | はい。繰り返し設定をそのまま .ics に出力するため、カレンダーアプリ側で展開して表示されます。 |
 | 通知は届きますか？ | .ics 自体には通知を含めません。Google カレンダーの場合は、購読したカレンダーの設定にある「予定の通知」から、カレンダー単位で通知を設定できます。 |
 | 更新をすぐに反映させたいです | Google カレンダーでは再取得の間隔を変更できません。Apple カレンダーと Outlook は、.ics に記載された間隔（6 時間）を目安に再取得します。 |
@@ -104,9 +105,9 @@ timetree-to-ics のライブラリで、https://timetr.ee/p/<名前> の予定�
 
 | 形式 | 例 |
 |---|---|
-| アプリの「共有」で取得できる短縮 URL | `https://timetr.ee/p/example_band` |
-| ブラウザで開いたときの URL | `https://timetreeapp.com/public_calendars/example_band` |
-| 名前のみ | `example_band` |
+| アプリの「共有」で取得できる短縮 URL | `https://timetr.ee/p/example_team` |
+| ブラウザで開いたときの URL | `https://timetreeapp.com/public_calendars/example_team` |
+| 名前のみ | `example_team` |
 
 ## コマンド（CLI）
 
@@ -135,14 +136,14 @@ npx timetree-to-ics https://timetr.ee/p/<名前> -o calendar.ics
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//timetree-to-ics//EN
-X-WR-CALNAME:Example Band
+X-WR-CALNAME:Example Team
 REFRESH-INTERVAL;VALUE=DURATION:PT6H
 BEGIN:VEVENT
 UID:100@timetree-to-ics
 DTSTART:20261201T090000Z
 DTEND:20261201T110000Z
-SUMMARY:ワンマンライブ
-DESCRIPTION:開場 18:00 / 開演 18:30\n\nhttps://timetr.ee/p/example_band/100
+SUMMARY:定例ミーティング
+DESCRIPTION:会場 3F 会議室 / 資料は前日に共有\n\nhttps://timetr.ee/p/example_team/100
 TRANSP:TRANSPARENT
 END:VEVENT
 END:VCALENDAR

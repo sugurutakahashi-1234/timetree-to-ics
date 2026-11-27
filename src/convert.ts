@@ -35,12 +35,12 @@ export type ConvertResult = {
 /**
  * TimeTree の公開カレンダーを、今後の予定だけの .ics にする。
  * 含めるのは、今より後に終わり（繰り返しの予定は、UNTIL で終わっていない物）、futureDays 日先までに始まる予定。
- * @param calendar 公開カレンダーの名前か URL（`example_band`・`https://timetreeapp.com/public_calendars/example_band`・`https://timetr.ee/p/example_band`）
+ * @param calendar 公開カレンダーの名前か URL（`example_team`・`https://timetreeapp.com/public_calendars/example_team`・`https://timetr.ee/p/example_team`）
  * @throws {TypeError} 名前か URL の形が違うとき
  * @throws {RangeError} 日数が 0〜3650 の範囲にないとき、now が無効な日付のとき
  * @throws {TimeTreeError} TimeTree を読めなかったとき（空の .ics は返さない）
  * @example
- * const { ics } = await timetreeToIcs("https://timetr.ee/p/example_band");
+ * const { ics } = await timetreeToIcs("https://timetr.ee/p/example_team");
  * return new Response(ics, { headers: { "content-type": ICS_CONTENT_TYPE } });
  */
 export async function timetreeToIcs(calendar: string, options: ConvertOptions = {}): Promise<ConvertResult> {

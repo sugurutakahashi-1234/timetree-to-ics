@@ -91,9 +91,9 @@ const FROM_URL = /(?:\/public_calendars\/|\btimetr\.ee\/p\/)([^/?#\s]+)/;
 
 /**
  * 公開カレンダーの名前か URL から、名前を取り出す。次のどれも受ける。
- * - 名前: `example_band`
- * - Web 版の URL: `https://timetreeapp.com/public_calendars/example_band`
- * - アプリの共有で出る短い URL: `https://timetr.ee/p/example_band`（予定の URL `…/p/example_band/<予定の ID>` も可）
+ * - 名前: `example_team`
+ * - Web 版の URL: `https://timetreeapp.com/public_calendars/example_team`
+ * - アプリの共有で出る短い URL: `https://timetr.ee/p/example_team`（予定の URL `…/p/example_team/<予定の ID>` も可）
  * @throws {TypeError} どの形でもないとき（非公開のカレンダーの URL も含む）
  */
 export function parseCalendarRef(input: string): string {

@@ -18,7 +18,7 @@ const events = [
 
 function routes() {
 	return fakeFetch((url) => {
-		if (url.pathname === "/api/v2/public_calendars/example_band") return { body: calendarBody };
+		if (url.pathname === "/api/v2/public_calendars/example_team") return { body: calendarBody };
 		if (url.pathname.endsWith("/public_events")) return { body: { public_events: events, paging: {} } };
 		return undefined;
 	});
@@ -26,20 +26,20 @@ function routes() {
 
 describe("timetreeToIcs", () => {
 	test("今日以降、1 年先までの予定を、始まりの順に載せる", async () => {
-		const result = await timetreeToIcs("example_band", { now: NOW, fetch: routes().fetch });
+		const result = await timetreeToIcs("example_team", { now: NOW, fetch: routes().fetch });
 		expect(result.events.map((e) => e.title)).toEqual(["今日の終日", "来週"]);
-		expect(result.calendar.name).toBe("Example Band");
-		expect(result.ics).toContain("X-WR-CALNAME:Example Band");
+		expect(result.calendar.name).toBe("Example Team");
+		expect(result.ics).toContain("X-WR-CALNAME:Example Team");
 	});
 
 	test("pastDays で、過ぎた予定も載せる", async () => {
-		const result = await timetreeToIcs("example_band", { now: NOW, pastDays: 2, fetch: routes().fetch });
+		const result = await timetreeToIcs("example_team", { now: NOW, pastDays: 2, fetch: routes().fetch });
 		expect(result.events.map((e) => e.title)).toEqual(["昨日", "今日の終日", "来週"]);
 	});
 
 	test("TimeTree には 1 日広い範囲を頼む", async () => {
 		const { fetch, calls } = routes();
-		await timetreeToIcs("example_band", { now: NOW, fetch });
+		await timetreeToIcs("example_team", { now: NOW, fetch });
 		const eventsCall = calls.find((url) => url.pathname.endsWith("/public_events"));
 		expect(eventsCall?.searchParams.get("from")).toBe(String(NOW.getTime() - DAY));
 	});
@@ -53,10 +53,10 @@ describe("timetreeToIcs", () => {
 			rawEvent({ id: 14, title: "日付だけの UNTIL", start_at: start, end_at: start + 3600_000, recurrences: ["RRULE:FREQ=DAILY;UNTIL=20261201"] }),
 		];
 		const { fetch } = fakeFetch((url) => {
-			if (url.pathname === "/api/v2/public_calendars/example_band") return { body: calendarBody };
+			if (url.pathname === "/api/v2/public_calendars/example_team") return { body: calendarBody };
 			return { body: { public_events: repeating, paging: {} } };
 		});
-		const result = await timetreeToIcs("example_band", { now: NOW, fetch });
+		const result = await timetreeToIcs("example_team", { now: NOW, fetch });
 		expect(result.events.map((e) => e.title)).toEqual(["来月まで続く", "回数で終わる", "日付だけの UNTIL"]);
 	});
 
@@ -65,12 +65,12 @@ describe("timetreeToIcs", () => {
 		const { fetch } = fakeFetch((url) =>
 			url.pathname.endsWith("/public_events") ? { body: { public_events: [weekly], paging: {} } } : { body: calendarBody },
 		);
-		const result = await timetreeToIcs("example_band", { now: NOW, fetch });
+		const result = await timetreeToIcs("example_team", { now: NOW, fetch });
 		expect(result.events.map((e) => e.title)).toEqual(["毎週"]);
 	});
 
 	test("filter で絞り、ics で表示名を上書きできる", async () => {
-		const result = await timetreeToIcs("example_band", {
+		const result = await timetreeToIcs("example_team", {
 			now: NOW,
 			fetch: routes().fetch,
 			filter: (e) => !e.allDay,
@@ -82,9 +82,9 @@ describe("timetreeToIcs", () => {
 
 	test("負の日数・大きすぎる日数・無効な now は RangeError で、TimeTree に行かない", async () => {
 		const { fetch, calls } = routes();
-		await expect(timetreeToIcs("example_band", { pastDays: -1, fetch })).rejects.toThrow(RangeError);
-		await expect(timetreeToIcs("example_band", { futureDays: 1e9, fetch })).rejects.toThrow(RangeError);
-		await expect(timetreeToIcs("example_band", { now: new Date("x"), fetch })).rejects.toThrow(RangeError);
+		await expect(timetreeToIcs("example_team", { pastDays: -1, fetch })).rejects.toThrow(RangeError);
+		await expect(timetreeToIcs("example_team", { futureDays: 1e9, fetch })).rejects.toThrow(RangeError);
+		await expect(timetreeToIcs("example_team", { now: new Date("x"), fetch })).rejects.toThrow(RangeError);
 		expect(calls).toEqual([]);
 	});
 });
